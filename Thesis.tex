@@ -1,0 +1,140 @@
+%
+% Template for Doctoral Theses at Uppsala 
+% University. The template is based on    
+% the layout and typography used for      
+% dissertations in the Acta Universitatis 
+% Upsaliensis series                      
+% Ver 5.2 - 2012-08-08                  
+% Latest version available at:            
+%   http://ub.uu.se/thesistemplate            
+%                                         
+% Support: Wolmar Nyberg Akerstrom        
+% Thesis Production           
+% Uppsala University Library              
+% avhandling@ub.uu.se                          
+%                                         
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\documentclass{UUThesisTemplate}
+
+% Package to determine wether XeTeX is used
+\usepackage{ifxetex}
+
+\ifxetex
+	% XeTeX specific packages and settings
+	% Language, diacritics and hyphenation
+	\usepackage[babelshorthands]{polyglossia}
+	\setmainlanguage{english}
+	\setotherlanguages{swedish}
+
+	% Font settings
+	\setmainfont{Times New Roman}
+	\setromanfont{Times New Roman}
+	\setsansfont{Arial}
+	\setmonofont{Courier New}
+\else
+	% Plain LaTeX specific packages and settings
+	% Language, diacritics and hyphenation
+    % Use English and Swedish languages. 
+	\usepackage[swedish,english]{babel} 
+
+	% Font settings
+	\usepackage{type1cm}
+	\usepackage[latin1]{inputenc}
+	\usepackage[T1]{fontenc}
+	\usepackage{mathptmx}
+	
+	% Enable scaling of images on import
+	\usepackage{graphicx}
+\fi
+
+
+% Tables
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+% Document links and bookmarks
+\usepackage{hyperref} 
+
+% Numbering of headings down to the subsection level
+\numberingdepth{subsection}
+
+% Including headings down to the subsection level in contents
+\contentsdepth{subsection}
+
+
+% Uncomment to use a custom abstract dummy text
+%\abstractdummy{
+%	\begin{abstract}
+%		Please use no more than 300 words and avoid mathematics or complex script.
+%	\end{abstract}
+%}
+
+
+\begin{document}
+\frontmatter
+    % Creates the front matter (title page(s), abstract, list of papers)
+    % for either a Comprehensive Summary or a Monograph.
+    % Authors of Comprehensive Summaries use this front matter 
+    \frontmatterCS 
+    % Monograph authors use this front matter 
+    %\frontmatterMonograph 
+ 
+   % Optional dedication
+   \dedication{Dedicated to my parents \\Hanieh \& Mohammad}
+ 
+    % Environment used to create a list of papers
+    \begin{listofpapers}
+    	\item \textbf{Applying symbolic execution to test implementations of a network protocol against its specification} \label{ICST@2022} \\
+    	Hooman Asadian, Paul Fiter\u{a}u-Bro\c{s}tean, Bengt Jonsson, and Konstantinos Sagonas. In \emph{IEEE Conference on Software Testing, Verification and Validation (ICST 2022)}. 70-81. \url{https://doi.org/10.1109/ICST53961.2022.00019}
+    	
+    	\item \textbf{Monitor-based testing of network protocol implementations using symbolic execution}\label{ARES@2024} \\
+    	Hooman Asadian, Paul Fiter\u{a}u-Bro\c{s}tean, Bengt Jonsson, and Konstantinos Sagonas. In \emph{Proceedings of the 19th International Conference on Availability, Reliability and Security ARES '24}. ACM, Article 17, 1-12.
+    	\url{https://doi.org/10.1145/3664476.3664521}
+    	
+    	\item \textbf{Uncovering Hidden Flaws in Network Protocol Implementations using Differential Symbolic Execution}\label{symdiff@under} \\
+    	Hooman Asadian, Paul Fiter\u{a}u-Bro\c{s}tean, Bengt Jonsson, and Konstantinos Sagonas.
+    	Under submission, a preprint can be found at
+    	\url{}
+    	
+    	\item \textbf{Testing IoT Protocol Requirements Using Fuzzing and Symbolic Execution: Application to CoAP}\label{cscn@2024} \\
+    	Hooman Asadian, Paul Fiter\u{a}u-Bro\c{s}tean, Bengt Jonsson, and Konstantinos Sagonas. In \emph{IEEE Conference on Standards for Communications and Networking (CSCN 2024)}. 48-54.
+    	\url{https://doi.org/10.1109/CSCN63874.2024.10849709} 
+    	
+    \end{listofpapers}
+    
+    
+    \begingroup
+        % To adjust the indentation in your table of contents, uncomment and enter the widest numbers for each level
+        %  E.g.  \settocnumwidth{widest chapter number}{widest section number}{widest subsection number}...{...}
+       %  \settocnumwidth{5}{4}{5}{3}{3}{3}
+        \tableofcontents
+    \endgroup
+    
+    % Optional tables
+    %\listoftables
+    %\listoffigures
+
+\mainmatter
+    % This includes the "Instruction", "Problem and Solutions" and "Example" files. After reading it, remove it from Thesis.tex. 
+    \input{chapters/introduction.tex}
+    \input{chapters/protocol-testing.tex}
+    \input{chapters/specification-based.tex}
+    \input{chapters/monitor-based.tex}
+    \input{chapters/differential-se.tex}
+    \input{chapters/symbolic-fuzzing.tex}
+    \input{chapters/related-work.tex}
+	\input{chapters/conclusion.tex}
+	\input{chapters/future-work.tex}
+	\input{chapters/contributions.tex}
+
+\backmatter
+    % References
+    % No restriction is set to the reference styles
+    % Save your references in References.bib
+    \nocite{*} % Remove this for your own citations
+    \bibliographystyle{plain}
+    \bibliography{References}
+
+\end{document}
