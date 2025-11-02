@@ -1,4 +1,16 @@
 \chapter{Introduction}
+Reliable and secure communication has become a foundational requirement for every modern information system.
+Software implementations that mediate communication, whether they are network stacks in operating systems or protocol libraries used in IoT devices, must operate in accordance with their specifications.
+When they do not, even subtle deviations can lead to a range of problems, including interoperability failures, functional errors, and severe security vulnerabilities.
+Incidents such as Heartbleed~\cite{heartbleed} and the TLS POODLE downgrade vulnerability~\cite{POODLE, poodle-bites-tls} demonstrate that even minor deviations can have catastrophic consequences.
+The practical lesson is that adherence to specifications is not optional but fundamental to both security and reliability.
+
+Testing protocol implementations is challenging for two main reasons. First, modern protocols are usually stateful and correct processing of a single packet often depends on a potentially long and intricate sequence of preceding messages.
+Second, protocol specifications are written in natural language and may contain ambiguous, underspecified, or even contradictory requirements. 
+These two characteristics make classical unit testing and ad hoc fuzzing are often insufficient: unit tests do not explore adversarial sequences, while naively applied fuzzing struggles with the stateful, session-oriented nature of protocol interactions. 
+Consequently, many implementation faults remain unnoticed until they are discovered in the wild or exploited.
+
+To understand these challenges, it is first necessary to look more closely at what network protocols are and how they are specified, implemented, and tested in practice.
 \section{Network Protocols}
 \section{Specification vs. Implementation}
 \section{Protocol Conformance Testing}
