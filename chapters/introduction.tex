@@ -5,13 +5,28 @@ When they do not, even subtle deviations can lead to a range of problems, includ
 Incidents such as Heartbleed~\cite{heartbleed} and the TLS POODLE downgrade vulnerability~\cite{POODLE, poodle-bites-tls} demonstrate that even minor deviations can have catastrophic consequences.
 The practical lesson is that adherence to specifications is not optional but fundamental to both security and reliability.
 
-Testing protocol implementations is challenging for two main reasons. First, modern protocols are usually stateful and correct processing of a single packet often depends on a potentially long and intricate sequence of preceding messages.
-Second, protocol specifications are written in natural language and may contain ambiguous, underspecified, or even contradictory requirements. 
-These two characteristics make classical unit testing and ad hoc fuzzing are often insufficient: unit tests do not explore adversarial sequences, while naively applied fuzzing struggles with the stateful, session-oriented nature of protocol interactions. 
+Testing protocol implementations is challenging for two main reasons. First, modern protocols are usually stateful and correct processing of a single packet often depends on a potentially long and intricate sequence of preceding packets.
+Second, protocol messages are highly parameterized, containing numerous interdependent fields whose values in some cases influence the interpretation of other fields and the overall state of the protocol.
+This creates a vast input space in which subtle combinations of parameters may expose corner cases or requirement violations that are rarely triggered in normal operation.
+These characteristics make classical unit testing and ad hoc fuzzing insufficient.
+Unit tests rarely explore adversarial message sequences, while naively applied fuzzing struggles to cover the complex dependencies and stateful interactions of protocol messages.
 Consequently, many implementation faults remain unnoticed until they are discovered in the wild or exploited.
 
-To understand these challenges, it is first necessary to look more closely at what network protocols are and how they are specified, implemented, and tested in practice.
+Several established techniques exist for systematic testing of software.
+Among these, \emph{symbolic execution (SE)} has proved to be particularly effective.
+SE is a white-box technique that analyzes programs in which some inputs or variables
+are designated as \emph{symbolic}, and explores the code paths that are
+feasible for some assignment to these symbolic inputs, thereby reasoning over the entire space of their possible values.
+In the context of network protocols, this means that an implementation can be tested not only against individual packets but also virtually against entire classes of message sequences that may trigger specification violations.
+
+This thesis investigates how SE can be adapted and extended to test the conformance of real-world network protocol implementations against their specifications.
+The focus is on developing techniques and tools that make SE effective in testing the implementation of stateful, complex protocols, where both the structure of individual packets and their sequence of exchanges determine correct behavior.
+
+Applying SE in this context first requires an understanding of how network protocols are structured and how their specifications define correct behavior.
+
 \section{Network Protocols}
+Network protocols define a set of rules that govern how distributed software and hardware systems communicate.
+
 \section{Specification vs. Implementation}
 \section{Protocol Conformance Testing}
 \section{Research Challenges}
