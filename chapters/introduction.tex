@@ -26,7 +26,28 @@ Applying SE in this context first requires an understanding of how network proto
 
 \section{Network Protocols}
 Network protocols define a set of rules that govern how distributed software and hardware systems communicate.
+They specify the format and semantics of messages exchanged between entities and the order in which these messages must appear to achieve correct and reliable communication.
+Protocols operate at different layers of the communication stack, from link and transport layers to application layer, and examples include TCP~\cite{RFC9293}, TLS~\cite{RFC5746}, DTLS~\cite{RFC6347}, QUIC~\cite{RFC9000}, and CoAP~\cite{RFC7252}.
+Although protocols widely vary in purpose and complexity, all share the same fundamental goal of providing a well-defined interface that enables independent implementations to interoperate correctly.
 
+Most network protocols are \emph{stateful systems}.
+Each communicating entity maintains an internal state that tracks the progress of an interaction, and the processing of an incoming message depends on this state.
+For example, handshake messages establish parameters such as keys, versions, or sequence numbers that determine how later messages are interpreted.
+
+Protocol messages are also \emph{highly parameterized}.
+They consist of multiple fields such as lengths, flags, versions, and sequence numbers that are often interdependent.
+These dependencies determine how a message is parsed and processed.
+For example, a length field defines how many bytes follow, a flag bit can change the message type, and a sequence number links the message to earlier communication.
+
+Together, statefulness and parameterized message structures make protocol implementations particularly challenging to test, since the correctness of behavior depends both on message sequences and on complex combinations of parameter values.
+
+Protocols may differ in purpose and environment.
+An IoT device, a web server, and a client application can all implement the same protocol under different resource, performance, and operational constraints.
+Despite these variations, each implementation must conform to the same rules of interaction to ensure interoperability.
+These rules and expected behaviors are formally defined in protocol specifications, which are introduced in the next section.
 \section{Specification vs. Implementation}
+A protocol specification describes the syntax and semantics of messages, the constraints on field values, and the state transitions that occur during communication.
+For internet protocols, these specifications are published as \emph{Request for Comments (RFCs)} by the Internet Engineering Task Force (IETF).
+RFCs serve as the primary reference for implementers and define both mandatory and optional requirements through keywords such as \emph{MUST}, \emph{SHOULD}, and \emph{MAY}.
 \section{Protocol Conformance Testing}
 \section{Research Challenges}
