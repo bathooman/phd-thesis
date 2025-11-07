@@ -32,7 +32,7 @@ Although protocols widely vary in purpose and complexity, all share the same fun
 
 Most network protocols are \emph{stateful systems}.
 Each communicating entity maintains an internal state that tracks the progress of an interaction, and the processing of an incoming message depends on this state.
-For example, handshake messages establish parameters such as keys, versions, or sequence numbers that determine how later messages are interpreted.
+For example, handshake messages establish parameters such as keys, versions, and sequence numbers that determine how later messages are interpreted.
 
 Protocol messages are also \emph{highly parameterized}.
 They consist of multiple fields such as lengths, flags, versions, and sequence numbers that are often interdependent.
@@ -45,9 +45,28 @@ Protocols may differ in purpose and environment.
 An IoT device, a web server, and a client application can all implement the same protocol under different resource, performance, and operational constraints.
 Despite these variations, each implementation must conform to the same rules of interaction to ensure interoperability.
 These rules and expected behaviors are formally defined in protocol specifications, which are introduced in the next section.
+
 \section{Specification vs. Implementation}
 A protocol specification describes the syntax and semantics of messages, the constraints on field values, and the state transitions that occur during communication.
-For internet protocols, these specifications are published as \emph{Request for Comments (RFCs)} by the Internet Engineering Task Force (IETF).
+For internet protocols, these specifications are published as \emph{Requests for Comments (RFCs)} by the Internet Engineering Task Force (IETF).
 RFCs serve as the primary reference for implementers and define both mandatory and optional requirements through keywords such as \emph{MUST}, \emph{SHOULD}, and \emph{MAY}.
+While the specification captures the abstract rules of communication, it is written in natural language and often includes explanatory text, loosely defined conditions, or in some cases even contradictory requirements.
+
+An implementation, by contrast, is a concrete realization of the specification in code.
+It translates the abstract protocol rules into data structures, algorithms, message parsing, and processing logic.
+Different implementations may be written in different programming languages, follow different architectural designs, or make use of varying libraries.
+In practice, developers often face trade-offs between strict conformance and other goals such as performance, compatibility, and resource efficiency.
+These trade-offs, along with differences in interpretation and engineering decisions, can cause subtle deviations from the intended protocol behavior.
+
+Deviations between specification and implementation can appear in several forms.
+Some are benign and affect only non-essential functionality, while others may compromise interoperability or security.
+For example, an implementation might accept invalid message parameters, reuse sequence numbers incorrectly, or fail to enforce version-negotiation requirements.
+Such inconsistencies may lead to communication failures, denial-of-service vulnerabilities, or protocol downgrade attacks.
+Even when the deviation does not result in a direct vulnerability, it may still create unpredictable behavior when interacting with other implementations.
+
+Maintaining conformance between specification and implementation is particularly difficult as protocols evolve.
+New versions and extensions are published as additional RFCs, while clarifications and errata are issued to amend existing documents.
+Older implementations must remain compatible with the newer versions, and developers frequently rely on reference implementations, example code, or informal test suites that themselves may not fully adhere to the specification.
+Over time, such de facto standards can diverge from the official specification, making conformance testing necessary to ensure consistent behavior across implementations.
 \section{Protocol Conformance Testing}
 \section{Research Challenges}
