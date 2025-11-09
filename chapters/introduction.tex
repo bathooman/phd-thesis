@@ -81,8 +81,8 @@ While black-box approaches closely mirror real-world communication, their effect
 Constructing such suites manually is time-consuming, and covering all possible states and message combinations is rarely achievable in practice.
 
 \emph{Model-Based Testing (MBT)} introduces a more systematic framework for black-box conformance testing.
-In MBT, an abstract model of the specification, such as a finite-state machine or a labeled transition system, is used to automatically generate test cases.
-Each generated sequence represents a potential interaction between protocol entities, and the observed outcomes are compared against the model's expected behavior.
+In MBT, an abstract behavioral model of the specification, such as a finite-state machine that describes the system's behavior in terms of inputs and outputs, is used to automatically generate test cases.
+Each generated sequence represents a potential interaction between protocol entities, and the observed outcomes are compared against the model's expected behavior to assess conformance.
 Model-based approaches improve coverage and make it possible to reason formally about test completeness.
 However, they rely on the availability of accurate formal models that capture the semantics of the specification.
 For many protocols, deriving such models from lengthy, natural-language RFCs remains a complex and often manual task.
@@ -99,9 +99,34 @@ It can also produce concrete test cases that reproduce identified issues, making
 Symbolic execution thus offers a systematic foundation for testing protocol conformance, although applying it effectively to real-world protocols introduces several technical challenges discussed in the next section.
 
 \section{Research Challenges}
-While symbolic execution has proven suitable for testing protocol conformance, applying it effectively to real-world network protocol implementations presents several challenges.
+While symbolic execution provides a systematic foundation for testing protocol conformance, applying it effectively to real-world network protocol implementations presents several challenges.
 These challenges arise from both the technical complexity of symbolic execution itself and the characteristics of protocol implementations.
-\subsubsection{State-space explosion.}
+
+\subsubsection{Path explosion.}
+Symbolic execution in theory explores all feasible execution paths in a program.
+In practice, exploring every path is impossible since the number of paths grows exponentially with the program size and can even be infinite in the presence of unbounded loops or recursive calls.
+With highly parameterized messages and stateful logic, path explosion is unavoidable in network protocol implementations and must be accounted for in any realistic application of symbolic execution for conformance testing, as each new message and state transition can create additional branching conditions that expand the symbolic search space.
+
 \subsubsection{Stateful behavior.}
-\subsubsection{Modeling External Interactions.}
+Network protocols often maintain internal state across sequences of messages, and the interpretation of an incoming message depends on the outcome of earlier exchanges.
+Classical symbolic execution is designed for stateless programs, in which each input is processed independently of all previous inputs.
+In protocols, however, validating certain requirements requires observing specific sequences of message exchanges rather than a single exchange.
+Applying symbolic execution to network protocol implementations therefore requires reasoning about how earlier symbolic inputs influence subsequent behavior.
+
+\subsubsection{Modeling network communication.}
+Communication between protocol entities occurs through socket calls that handle the exchange of messages over the network.
+Classical symbolic execution, however, cannot directly reason about these interactions, since they take place outside the control of the program under analysis.
+Therefore, interactions performed through sockets must either be modeled or abstracted to enable symbolic analysis of protocol implementations.
+
 \subsubsection{Formalization of requirements.}
+Symbolic execution relies on oracles to determine whether observed behaviors conform to the protocol specification.
+Network protocol specifications, however, are written in natural language, and ambiguities, cross-references, and conditional requirements make it difficult to translate these descriptions into formal properties that can be checked automatically.
+As a result, defining precise conformance criteria that capture the intent of the specification remains a major challenge for applying symbolic execution to protocol testing.
+
+The challenges outlined above define the scope of this thesis and motivate the research presented in the following chapters. 
+The remainder of the thesis is organized as follows.
+\Cref{sec:background} provides background on software testing and symbolic execution, describing both traditional and modern approaches to protocol testing.
+Chapters~\ref{sec:paper1}~to~\ref{sec:paper4} summarize the research papers included in this thesis, each addressing a specific aspect of applying symbolic execution to protocol conformance testing.
+\Cref{sec:related} reviews related work.
+\Cref{sec:conclusion} presents the overall conclusions drawn from this research, followed by \Cref{sec:future}, which outlines possible directions for future work.
+Finally, \Cref{sec:contributions} summarizes the main contributions of the thesis.
