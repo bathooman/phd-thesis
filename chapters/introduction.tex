@@ -1,23 +1,24 @@
 \chapter{Introduction}
-Reliable and secure communication has become a foundational requirement for every modern information system.
-Software implementations that mediate communication, whether they are network stacks in operating systems or protocol libraries used in IoT devices, must operate in accordance with their specifications.
+Reliable and secure communication has become a fundamental requirement for every modern information system.
+Software components that handle communication, whether they are network stacks in operating systems or protocol libraries used in IoT devices, must operate in accordance with their specifications.
 When they do not, even subtle deviations can lead to a range of problems, including interoperability failures, functional errors, and severe security vulnerabilities.
 Incidents such as Heartbleed~\cite{heartbleed} and the TLS POODLE downgrade vulnerability~\cite{POODLE, poodle-bites-tls} demonstrate that even minor deviations can have catastrophic consequences.
-The practical lesson is that adherence to specifications is not optional but fundamental to both security and reliability.
+The practical lesson is that adherence to specifications is essential for both security and reliability.
 
-Testing protocol implementations is challenging for two main reasons. First, modern protocols are usually stateful and correct processing of a single packet often depends on a potentially long and intricate sequence of preceding packets.
-Second, protocol messages are highly parameterized, containing numerous interdependent fields whose values in some cases influence the interpretation of other fields and the overall state of the protocol.
+Testing protocol implementations is difficult for two main reasons. 
+First, modern protocols are usually stateful, and correct processing of a single packet often depends on a potentially long and intricate sequence of preceding packets.
+Second, protocol messages are highly parameterized, containing numerous interdependent fields whose values in some cases influence the interpretation of other fields and the protocol's operational state.
 This creates a vast input space in which subtle combinations of parameters may expose corner cases or requirement violations that are rarely triggered in normal operation.
-These characteristics make classical unit testing and ad hoc fuzzing insufficient.
+These characteristics make classical unit testing and ad hoc fuzzing insufficient for comprehensive validation.
 Unit tests rarely explore adversarial message sequences, while naively applied fuzzing struggles to cover the complex dependencies and stateful interactions of protocol messages.
 Consequently, many implementation faults remain unnoticed until they are discovered in the wild or exploited.
 
-Several established techniques exist for systematic testing of software.
+Several established techniques exist for the systematic testing of software.
 Among these, \emph{symbolic execution (SE)} has proved to be particularly effective.
 SE is a white-box technique that analyzes programs in which some inputs or variables
 are designated as \emph{symbolic}, and explores the code paths that are
 feasible for some assignment to these symbolic inputs, thereby reasoning over the entire space of their possible values.
-In the context of network protocols, this means that an implementation can be tested not only against individual packets but also virtually against entire classes of message sequences that may trigger specification violations.
+In the context of network protocols, this means that an implementation can be tested not only against individual packets but also against entire classes of message sequences that may trigger specification violations.
 
 This thesis investigates how SE can be adapted and extended to test the conformance of real-world network protocol implementations against their specifications.
 The focus is on developing techniques and tools that make SE effective in testing the implementation of stateful, complex protocols, where both the structure of individual packets and their sequence of exchanges determine correct behavior.
@@ -30,19 +31,18 @@ They specify the format and semantics of messages exchanged between entities and
 Protocols operate at different layers of the communication stack, from link and transport layers to application layer, and examples include TCP~\cite{RFC9293}, TLS~\cite{RFC5746}, DTLS~\cite{RFC6347}, QUIC~\cite{RFC9000}, and CoAP~\cite{RFC7252}.
 Although protocols widely vary in purpose and complexity, all share the same fundamental goal of providing a well-defined interface that enables independent implementations to interoperate correctly.
 
-Most network protocols are \emph{stateful systems}.
-Each communicating entity maintains an internal state that tracks the progress of an interaction, and the processing of an incoming message depends on this state.
-For example, handshake messages establish parameters such as keys, versions, and sequence numbers that determine how later messages are interpreted.
+Most network protocols are \emph{stateful systems} in which each communicating entity maintains an internal state that tracks the progress of an interaction, and the processing of an incoming message depends on this state.
+For example, handshake messages establish parameters such as cryptographic keys, protocol versions, and sequence numbers that influence how subsequent messages are interpreted.
 
 Protocol messages are also \emph{highly parameterized}.
 They consist of multiple fields such as lengths, flags, versions, and sequence numbers that are often interdependent.
 These dependencies determine how a message is parsed and processed.
-For example, a length field defines how many bytes follow, a flag bit can change the message type, and a sequence number links the message to earlier communication.
+For example, a length field defines the number of bytes that follow, a flag bit can change the message type, and a sequence number links the message to previous communication in the exchange.
 
 Together, statefulness and parameterized message structures make protocol implementations particularly challenging to test, since the correctness of behavior depends both on message sequences and on complex combinations of parameter values.
 
 Protocols may differ in purpose and environment.
-An IoT device, a web server, and a client application can all implement the same protocol under different resource, performance, and operational constraints.
+An IoT device, a web server, and a client application can all implement the same protocol under different operational constraints.
 Despite these variations, each implementation must conform to the same rules of interaction to ensure interoperability.
 These rules and expected behaviors are formally defined in protocol specifications, which are introduced in the next section.
 
@@ -50,19 +50,19 @@ These rules and expected behaviors are formally defined in protocol specificatio
 A protocol specification describes the syntax and semantics of messages, the constraints on field values, and the state transitions that occur during communication.
 For internet protocols, these specifications are published as \emph{Requests for Comments (RFCs)} by the Internet Engineering Task Force (IETF).
 RFCs serve as the primary reference for implementers and define both mandatory and optional requirements through keywords such as \emph{MUST}, \emph{SHOULD}, and \emph{MAY}.
-While the specification captures the abstract rules of communication, it is written in natural language and often includes explanatory text, loosely defined conditions, or in some cases even contradictory requirements.
+While the specification captures the abstract rules of communication, it is written in natural language and often includes explanatory text, loosely defined conditions, ambiguous phrasing, or even contradictory statements.
 
 An implementation, by contrast, is a concrete realization of the specification in code.
 It translates the abstract protocol rules into data structures, algorithms, message parsing, and processing logic.
 Different implementations may be written in different programming languages, follow different architectural designs, or make use of varying libraries.
 In practice, developers often face trade-offs between strict conformance and other goals such as performance and compatibility.
-These trade-offs, along with differences in interpretation and engineering decisions, can cause subtle deviations from the intended protocol behavior.
+These trade-offs, combined with variations in interpretation and design choices, can result in subtle deviations from the intended protocol behavior.
 
 Deviations between specification and implementation can appear in various forms.
 Some are benign and affect only non-essential functionality, while others may compromise interoperability or security.
 For example, an implementation might accept invalid message parameters, reuse sequence numbers incorrectly, or fail to enforce version-negotiation requirements.
 Such inconsistencies may lead to communication failures, denial-of-service vulnerabilities, or protocol downgrade attacks.
-Even when the deviation does not result in a direct vulnerability, it may still create unpredictable behavior when interacting with other implementations.
+Even when a deviation does not result in a direct vulnerability, it may still produce unpredictable or non-standard behavior when interacting with other implementations.
 
 Maintaining conformance between specification and implementation is particularly difficult as protocols evolve.
 New versions and extensions are published as additional RFCs, while clarifications and errata are issued to amend existing documents.
@@ -72,12 +72,12 @@ Over time, such de facto standards can diverge from the official specification, 
 \section{Protocol Conformance Testing}
 Protocol conformance testing is the process of assessing whether an implementation behaves according to the requirements defined in the protocol specification.
 Its goal is to ensure that the observable behavior of a system matches the behavior prescribed by the specification, thereby guaranteeing interoperability and correctness across independent implementations.
-Unlike functional testing, which focuses on whether a component produces the right output for a given input, conformance testing focuses on compliance with externally defined standards.
+Unlike functional testing, which focuses on whether a component produces the right output for a given input, conformance testing evaluates compliance with externally defined standards.
 
-Traditional approaches to conformance testing are often \emph{black-box}, where the implementation is evaluated solely through its input-output behavior.
+Traditional approaches to conformance testing are often \emph{black-box} methods, where the implementation is evaluated solely through its input-output behavior.
 Testers provide sequences of protocol messages as input and observe the resulting outputs, comparing them to the behaviors prescribed by the specification.
 Test cases are commonly derived manually from the specification, describing valid and invalid message exchanges together with oracles that determine whether the observed responses conform to the specification. 
-While black-box approaches closely mirror real-world communication, their effectiveness is limited by the completeness of the test suite.
+While black-box approaches closely mirror real-world communication, their effectiveness is limited by the coverage and completeness of the test suite.
 Constructing such suites manually is time-consuming, and covering all possible states and message combinations is rarely achievable in practice.
 
 \emph{Model-Based Testing (MBT)} introduces a more systematic framework for black-box conformance testing.
@@ -85,7 +85,7 @@ In MBT, an abstract behavioral model of the specification, such as a finite-stat
 Each generated sequence represents a potential interaction between protocol entities, and the observed outcomes are compared against the model's expected behavior to assess conformance.
 Model-based approaches improve coverage and make it possible to reason formally about test completeness.
 However, they rely on the availability of accurate formal models that capture the semantics of the specification.
-For many protocols, deriving such models from lengthy, natural-language RFCs remains a complex and often manual task.
+For many protocols, deriving such models from lengthy, natural-language RFCs remains a complex, error-prone, and often manual process.
 
 \emph{White-box} approaches incorporate detailed knowledge of the implementation, such as source code, control flow, and data dependency, to analyze its behavior against the specification.
 Within this category, symbolic execution (SE) has emerged as a particularly effective approach.
@@ -94,9 +94,9 @@ By reasoning about the conditions under which different execution paths are take
 Symbolic execution is well suited for analyzing highly parameterized message structures, as it can reason about constraints on input fields and systematically explore combinations of parameter values that affect control flow.
 When extended to handle sequences of interactions, it can also be applied to the analysis of stateful protocols, where both message content and interaction order determine correctness.
 
-When requirements from the specification are expressed as assertions within the code or checked externally through monitors, symbolic execution can automatically detect deviations from expected behavior.
+When requirements from the specification are expressed as assertions in the code or checked externally through monitors, symbolic execution can automatically detect deviations from expected behavior.
 It can also produce concrete test cases that reproduce identified issues, making them verifiable and repeatable.
-Symbolic execution thus offers a systematic foundation for testing protocol conformance, although applying it effectively to real-world protocols introduces several technical challenges discussed in the next section.
+Symbolic execution therefore provides a systematic basis for testing protocol conformance, although applying it effectively to real-world protocols introduces several technical challenges discussed in the next section.
 
 \section{Research Challenges}
 While symbolic execution provides a systematic foundation for testing protocol conformance, applying it effectively to real-world network protocol implementations presents several challenges.
@@ -110,7 +110,7 @@ With highly parameterized messages and stateful logic, path explosion is unavoid
 \subsubsection{Stateful behavior.}
 Network protocols often maintain internal state across sequences of messages, and the interpretation of an incoming message depends on the outcome of earlier exchanges.
 Classical symbolic execution is designed for stateless programs, in which each input is processed independently of all previous inputs.
-In protocols, however, validating certain requirements requires observing specific sequences of message exchanges rather than a single exchange.
+In protocols, however, validating certain requirements depends on observing specific sequences of message exchanges rather than isolated interactions.
 Applying symbolic execution to network protocol implementations therefore requires reasoning about how earlier symbolic inputs influence subsequent behavior.
 
 \subsubsection{Modeling network communication.}
@@ -120,13 +120,12 @@ Therefore, interactions performed through sockets must either be modeled or abst
 
 \subsubsection{Formalization of requirements.}
 Symbolic execution relies on oracles to determine whether observed behaviors conform to the protocol specification.
-Network protocol specifications, however, are written in natural language, and ambiguities, cross-references, and conditional requirements make it difficult to translate these descriptions into formal properties that can be checked automatically.
-As a result, defining precise conformance criteria that capture the intent of the specification remains a major challenge for applying symbolic execution to protocol testing.
+Network protocol specifications, however, are written in natural language, and their ambiguities, cross-references, and conditional statements make it difficult to translate them into formal properties that can be checked automatically. 
+As a result, defining precise conformance criteria that capture the intent of the specification remains a major obstacle to applying symbolic execution effectively in protocol testing.
 
 The challenges outlined above define the scope of this thesis and motivate the research presented in the following chapters. 
 The remainder of the thesis is organized as follows.
 \Cref{sec:background} provides background on software testing and symbolic execution, describing both traditional and modern approaches to protocol testing.
 Chapters~\ref{sec:paper1}~to~\ref{sec:paper4} summarize the research papers included in this thesis, each addressing a specific aspect of applying symbolic execution to protocol conformance testing.
-\Cref{sec:related} reviews related work.
-\Cref{sec:conclusion} presents the overall conclusions drawn from this research, followed by \Cref{sec:future}, which outlines possible directions for future work.
-Finally, \Cref{sec:contributions} summarizes the main contributions of the thesis.
+\Cref{sec:related} reviews related work,
+\Cref{sec:conclusion} presents the overall conclusions drawn from this research, \Cref{sec:future} outlines potential directions for future work, and \Cref{sec:contributions} summarizes the main contributions of the thesis.
