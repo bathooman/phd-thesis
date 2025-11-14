@@ -2,3 +2,112 @@
 \section{Traditional Testing Methods}
 \section{Modern Automated Approaches for Protocol Testing}
 \section{Symbolic Execution}
+Symbolic execution (SE)~\cite{King@CACM-76} is a white-box technique that analyzes programs in which some inputs or variables are designated as symbolic, and explores all code paths that are feasible for particular assignments to these symbolic variables, thereby reasoning over the entire space of their possible values.
+During symbolic execution, the SE engine maintains two key structures for each explored path: a symbolic store ($\mathtt{\sigma}$), which maps program variables to symbolic expressions representing their current values, and a path condition ($\mathit{PC}$), which accumulates the logical constraints that must hold along the path being explored.
+\smallskip
+\begin{listing}[ht]
+	\centering
+	\begin{minipage}{0.75\linewidth}
+		\begin{minted}[linenos, autogobble]{C}
+			int max(int a, int b) {
+			  int result;
+			  if (a > b)
+			    result = a;
+			  else if (a < b)
+			    result = b;
+			  // Missing assignment when a == b
+			  return result;
+			}
+		\end{minted}
+	\end{minipage}
+	\caption{Function returning the maximum of two integers.}
+	\label{lst:max-func}
+\end{listing}
+\smallskip
+
+To illustrate, consider the simple C function in \Cref{lst:max-func}, which is intended to return the larger of two integers provided as input.
+Although the function successfully compiles and may appear correct, it contains a subtle flaw: when $\mathtt{a}$ equals $\mathtt{b}$, the variable $\mathtt{result}$ is returned without being initialized. 
+Reading an uninitialized variable in C constitutes \emph{undefined behavior}, which yields arbitrary values or may cause a crash depending on memory state.
+This type of flaw is common in real-world systems and is notoriously difficult to detect through conventional testing.
+
+Symbolic execution begins by initializing symbolic values $\mathtt{a_0}$ and $\mathtt{b_0}$. The initial symbolic state is:
+\[
+\begin{aligned}
+	\sigma_0 &= \{ a \mapsto a_0,\, b \mapsto b_0 \},\\
+	PC_0 &= \text{true}.
+\end{aligned}
+\]
+The conditional statements in \Cref{lst:max-func} yield three feasible execution paths.
+When $(a_0 > b_0)$, corresponding to the if branch on line 3, the program returns $\mathtt{a}$ (Path 1).
+When $(a_0 < b_0)$, corresponding to the else if branch on line 5, it returns $\mathtt{b}$ (Path 2).
+Finally, when $(a_0 = b_0)$, execution skips both assignments, returning an uninitialized $\mathtt{result}$ (Path 3).
+
+\setlength{\jot}{0.3em}
+\[
+\begin{aligned}
+	\textsc{Path 1:}\quad &PC_1 = (a_0 > b_0) &&\Rightarrow \text{return } a_0,\\
+	\textsc{Path 2:}\quad &PC_{2} = (a_0 < b_0) &&\Rightarrow \text{return } b_0,\\
+	\textsc{Path 3:}\quad &PC_{3} = (a_0 = b_0) &&\Rightarrow \text{uninitialized read of } \texttt{result.}
+\end{aligned}
+\]
+
+For compactness, the symbolic state corresponding to the faulty path can be summarized as:
+\begin{tcolorbox}[
+	title=Symbolic state on Path 3,
+	colback=gray!3,
+	colframe=blue!40!black,
+	boxrule=0.3pt,
+	left=4pt, right=4pt, top=2pt, bottom=1pt,
+	sharp corners
+	]
+	$$
+	\begin{aligned}
+		\sigma_{3} &= \{ a \mapsto a_0,\, b \mapsto b_0,\, \texttt{result} \mapsto \bot \},\\
+		PC_{3} &= (a_0 = b_0).
+	\end{aligned}
+	$$
+	\vspace{1pt}
+\end{tcolorbox}
+
+Each path condition is then submitted to an SMT solver such as Z3~\cite{z3-solver}, which determines whether the condition is satisfiable and, if so, produces concrete values for the symbolic variables (called witnesses) that satisfy it.
+The paths, conditions, and corresponding witnesses are summarized in \Cref{tab:max-paths}.
+\smallskip
+\begin{table}[ht]
+	\centering
+	\small
+	\setlength{\tabcolsep}{10pt}
+	\begin{tabular}{@{}cc@{\hspace{6pt}}c@{}}
+		\toprule
+		\textbf{Path} & \textbf{Path Condition} & \textbf{Example Witness} \\
+		\midrule
+		1   & $a_0 > b_0$ & $(a,b)=(5,3)$ \\
+		2 & $a_0 < b_0$ & $(a,b)=(2,7)$ \\
+		3 & $a_0 = b_0$ & $(a,b)=(4,4)$ \\
+		\bottomrule
+	\end{tabular}
+	\vspace{1ex}
+	\caption{Feasible paths, path conditions, and corresponding witnesses for the program in \Cref{lst:max-func}}
+	\label{tab:max-paths}
+\end{table}
+\smallskip
+Finally, executing the program with the concrete values $(a,b)=(4,4)$, the witness for Path 3 reveals the flaw: an uninitialized read of \texttt{result}. 
+Symbolic execution engines typically report such behavior as an uninitialized variable read accompanied by a counterexample witness. 
+The boxed state above clearly exposes the root cause: the symbolic store records $\texttt{result}\mapsto\bot$ (undefined) while the path condition $\mathit{PC}_{3}$ remains satisfiable.
+
+Beyond this small example, SE provides several advantages as a testing technique.
+Its systematic exploration of feasible execution paths, combined with the use of SMT solvers to reason about constraints over symbolic variables, enables it to uncover subtle errors that are difficult to expose through conventional testing.
+The witnesses produced by the solver allow precise and reproducible test cases, and assertions or specification rules can be embedded directly into the tested program to serve as correctness oracles.
+
+Several mature SE engines have demonstrated the practical value of the technique.
+KLEE~\cite{KLEE@OSDI-08} has been widely used to analyze system libraries and embedded utilities, achieving high coverage and uncovering numerous real-world bugs. 
+S2E~\cite{S2E@12} extends SE to full-system environments, allowing analysis of complex binaries that interact with operating systems services and hardware abstractions.
+
+Despite its strengths, SE also faces several well-known limitations.
+The number of feasible execution paths in a program typically grows exponentially with the number of branches, a common phenomenon known as path explosion problem.
+Constraint solving becomes increasingly expensive when programs manipulate pointer-heavy data structures, arrays with symbolic indices, or arithmetic expressions whose satisfiability requires nonlinear reasoning.
+Furthermore, many real-world programs interact with their environment through file systems, network sockets, timers, or other operating system services.
+Accurately modeling these external effects is challenging, and incomplete models can restrict the precision or scalability of the analysis.
+
+These limitations are amplified in the context of network protocol implementations. 
+Protocols are stateful systems whose behavior depends on sequences of message exchanges, and they frequently rely on system calls for communication, scheduling, or timing, which fall outside the control flow structure that SE explores. 
+These factors limit the effectiveness of classical SE for protocol conformance testing and motivate the extensions developed in the remainder of this thesis.
