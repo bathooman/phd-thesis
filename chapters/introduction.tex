@@ -37,19 +37,20 @@ For example, handshake messages establish parameters such as cryptographic keys,
 Protocol messages are also \emph{highly parameterized}.
 They consist of multiple fields such as lengths, flags, versions, and sequence numbers that are often interdependent.
 These dependencies determine how a message is parsed and processed.
-For example, a length field defines the number of bytes that follow, a flag bit can change the message type, and a sequence number links the message to previous communication in the exchange.
+For example, a length field defines the number of bytes that follow, a flag bit can change the message type, and a sequence number links the message to previous communication in the interaction.
 
 Together, statefulness and parameterized message structures make protocol implementations particularly challenging to test, since the correctness of behavior depends both on message sequences and on complex combinations of parameter values.
 
 Protocols may differ in purpose and environment.
 An IoT device, a web server, and a client application can all implement the same protocol under different operational constraints.
-Despite these variations, each implementation must conform to the same rules of interaction to ensure interoperability.
+Despite these variations, each implementation must conform to the same rules of interaction for this particular protocol to ensure interoperability.
 These rules and expected behaviors are formally defined in protocol specifications, which are introduced in the next section.
 
 \section{Specification vs. Implementation}
-A protocol specification describes the syntax and semantics of messages, the constraints on field values, and the state transitions that occur during communication.
-For internet protocols, these specifications are published as \emph{Requests for Comments (RFCs)} by the Internet Engineering Task Force (IETF).
-RFCs serve as the primary reference for implementers and define both mandatory and optional requirements through keywords such as \emph{MUST}, \emph{SHOULD}, and \emph{MAY}.
+A protocol specification describes the syntax and semantics of messages, the constraints on field values, the permitted ordering of messages, and the state transitions that occur during communication. 
+For internet protocols, these specifications are published as \emph{Requests for Comments (RFCs)} by the Internet Engineering Task Force (IETF). 
+RFCs serve as the primary reference for implementers and define both mandatory and optional requirements through keywords such as \emph{MUST}, \emph{SHOULD}, and \emph{MAY}. 
+For example, RFC 6347~\cite[p. 9]{RFC6347} mandates that ``implementations \emph{MUST} either abandon an association or rehandshake prior to allowing the sequence number to wrap,`` illustrating how specifications define concrete behaviors to preserve reliability and correctness. 
 While the specification captures the abstract rules of communication, it is written in natural language and often includes explanatory text, loosely defined conditions, ambiguous phrasing, or even contradictory statements.
 
 An implementation, by contrast, is a concrete realization of the specification in code.
