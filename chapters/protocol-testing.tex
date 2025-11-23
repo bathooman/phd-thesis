@@ -1,9 +1,73 @@
 \chapter{Background}\label{sec:background}
 \section{Traditional Testing Methods}
+Testing has long been a central technique for assessing software correctness.
+Traditional approaches operate by exercising selected program behaviors under representative inputs and observing whether the outputs match the expectations defined by a specification.
+In practice, this usually involves a hierarchy of testing activities.
+Unit tests target individual functions or modules in isolation, while integration and system tests examine interactions among components and validate end-to-end functionality in realistic settings.
+Regression tests ensure that previously correct behavior is preserved as the software evolves.
+
+These techniques remain highly useful, yet their effectiveness is inherently limited by the scope of the selected test cases.
+Most software systems have large input spaces and complex control flow, so manually designed test suites typically cover only a fraction of the possible behaviors.
+Corner cases and rarely exercised paths often remain untested, allowing subtle flaws to stay undetected.
+
+Even with modern advances, testing remains inherently incomplete.
+Whether test cases are constructed manually or generated automatically, they explore a subset of the behaviors a program may exhibit in practice.
+Testing can therefore increase confidence in correctness by revealing flaws in the observed executions, but it cannot guarantee their absence in real-world software systems.
+
+While this fundamental limitation applies to all testing techniques, traditional approaches face additional practical constraints.
+Manually crafted tests scale poorly to complex systems, provide limited coverage of hard-to-reach behaviors, and require substantial effort to maintain as software evolves.
+These practical challenges motivated the development of more systematic and automated testing approaches, particularly in domains where correctness depends on structured inputs, ordered sequences of operations, or adherence to detailed specifications.
+
+
+The next subsection introduces such automated methods in the context of protocol testing.
+
 \section{Modern Automated Approaches for Protocol Testing}
+As software systems grew in complexity, testing practices increasingly incorporated automation to improve coverage and reduce reliance on manually crafted test suites.
+Automated techniques aim to explore program behavior more systematically, exercise hard-to-reach code paths, and reduce the effort required to maintain large test suites as software evolves.
+These goals are particularly relevant for protocol implementations, where correctness depends on structured message formats, precise constraints on message order, and stateful interactions.
+
+A widely adopted automated technique is \emph{Model-Based Testing}, which derives test cases from an abstract behavioral model such as a finite-state machine.
+When sufficiently accurate models are available, this approach provides a systematic way to explore a broad range of message sequences and protocol states.
+Each generated sequence represents a potential interaction between protocol entities, and the observed behavior of the implementation is compared against the model's expected behavior to assess conformance.
+However, constructing accurate models from natural-language specifications is labor-intensive, and inaccuracies can directly affect the resulting tests. 
+
+\emph{Fuzz testing} offers a complementary strategy based on automatically generating large numbers of inputs, often by mutating valid messages or message sequences. 
+Coverage-guided fuzzers prioritize inputs that trigger previously unexplored control-flow branches and have proven effective at exposing robustness issues such as crashes and memory-safety violations. 
+Traditional fuzzers treat each input largely in isolation, which makes them less effective for exploring deeper protocol behaviors that depend on long-lived internal state or structured message flows. 
+Recent state-aware fuzzers mitigate this limitation by incorporating message types and simple feedback on server responsiveness, enabling more targeted exploration of protocol state. 
+However, their notion of state remains coarse-grained and heuristic, and they provide limited control over the semantic rules defined in the protocol specification, which reduces their utility for conformance testing.
+
+\emph{Differential testing} provides another automated technique suitable for protocols. 
+By exercising multiple independent implementations with the same inputs and comparing their outputs, it can reveal behavioral differences in how implementations process those inputs. 
+The inputs may vary not only in the sequence of messages but also in the specific values carried by individual fields, either of which can drive implementations into different behaviors. 
+Such differences do not automatically indicate flaws, since protocol specifications often allow multiple conforming responses. 
+The specification can therefore be consulted to determine whether a discrepancy is permitted or whether one implementation violates the expected behavior. 
+The effectiveness of differential testing depends heavily on the richness of the test suite, because discrepancies can only be observed for the interactions that are actually exercised. 
+Although differential testing avoids the need for an explicit behavioral model, it relies on the availability of multiple mature implementations.
+
+
+Several other automated techniques have also been explored in the domain of protocol testing.
+Grammar-based input generation constructs syntactically valid messages from protocol grammars, allowing systematic exploration of field combinations, encodings, and optional structures that mutation-based fuzzing may miss.
+Model learning techniques learn an implementation's state machine from observed interactions and use the inferred model for targeted test generation or conformance checks.
+Together, these approaches extend the behaviors that automated testing can exercise and complement model-based and mutation-based techniques.
+
+Despite these advances, automated approaches still struggle to exercise certain behaviors, especially when those behaviors depend on specific branching choices or arise only under narrowly constrained conditions.
+Because input generation alone cannot always guide execution toward these areas, it is often useful to complement such techniques with approaches that reason directly about program logic.
+The next section introduces symbolic execution, which executes programs with symbolic inputs to explore feasible execution paths.
+
 \section{Symbolic Execution}
 Symbolic execution (SE)~\cite{King@CACM-76} is a white-box technique that analyzes programs in which some inputs or variables are designated as symbolic, and explores all code paths that are feasible for particular assignments to these symbolic variables, thereby reasoning over the entire space of their possible values.
 During symbolic execution, the SE engine maintains two key structures for each explored path: a symbolic store ($\mathtt{\sigma}$), which maps program variables to symbolic expressions representing their current values, and a path condition ($\mathit{PC}$), which accumulates the logical constraints that must hold along the path being explored.
+
+In practice, SE engines such as KLEE~\cite{KLEE@OSDI-08} operate incrementally. 
+As the program executes, each instruction is evaluated while tracking how its result depends on symbolic inputs: assignments update the symbolic store, memory loads retrieve the current symbolic expression of the addressed location, and conditional branches may fork execution when their predicates involve symbolic data.
+At each branch, the engine conjoins the branch predicate with the current path condition and consults an SMT solver to determine whether the branch is feasible.
+Infeasible branches are pruned immediately, while feasible ones continue with their updated symbolic state.
+
+To illustrate, consider the simple C function in \Cref{lst:max-func}, which is intended to return the larger of two integers provided as input.
+Although the function successfully compiles and may appear correct, it contains a subtle flaw: when $\mathtt{a}$ equals $\mathtt{b}$, the variable $\mathtt{result}$ is returned without being initialized. 
+Reading an uninitialized variable in C constitutes \emph{undefined behavior}, which yields arbitrary values or may cause a crash depending on memory state.
+This type of flaw is common in real-world systems and is notoriously difficult to detect through conventional testing.
 \smallskip
 \begin{listing}[ht]
 	\centering
@@ -25,12 +89,8 @@ During symbolic execution, the SE engine maintains two key structures for each e
 \end{listing}
 \smallskip
 
-To illustrate, consider the simple C function in \Cref{lst:max-func}, which is intended to return the larger of two integers provided as input.
-Although the function successfully compiles and may appear correct, it contains a subtle flaw: when $\mathtt{a}$ equals $\mathtt{b}$, the variable $\mathtt{result}$ is returned without being initialized. 
-Reading an uninitialized variable in C constitutes \emph{undefined behavior}, which yields arbitrary values or may cause a crash depending on memory state.
-This type of flaw is common in real-world systems and is notoriously difficult to detect through conventional testing.
-
-Symbolic execution begins by initializing symbolic values $\mathtt{a_0}$ and $\mathtt{b_0}$. The initial symbolic state is:
+Symbolic execution begins by initializing symbolic values $\mathtt{a_0}$ and $\mathtt{b_0}$. 
+The initial symbolic state is:
 \[
 \begin{aligned}
 	\sigma_0 &= \{ a \mapsto a_0,\, b \mapsto b_0 \},\\
@@ -38,9 +98,9 @@ Symbolic execution begins by initializing symbolic values $\mathtt{a_0}$ and $\m
 \end{aligned}
 \]
 The conditional statements in \Cref{lst:max-func} yield three feasible execution paths.
-When $(a_0 > b_0)$, corresponding to the if branch on line 3, the program returns $\mathtt{a}$ (Path 1).
-When $(a_0 < b_0)$, corresponding to the else if branch on line 5, it returns $\mathtt{b}$ (Path 2).
-Finally, when $(a_0 = b_0)$, execution skips both assignments, returning an uninitialized $\mathtt{result}$ (Path 3).
+When $a_0 > b_0$, corresponding to the if branch on line 3, the program returns $\mathtt{a}$ (Path 1).
+When $a_0 < b_0$, corresponding to the else if branch on line 5, it returns $\mathtt{b}$ (Path 2).
+Finally, when $a_0 = b_0$, execution skips both assignments, returning an uninitialized $\mathtt{result}$ (Path 3).
 
 \setlength{\jot}{0.3em}
 \[
@@ -69,7 +129,11 @@ For compactness, the symbolic state corresponding to the faulty path can be summ
 	\vspace{1pt}
 \end{tcolorbox}
 
-Each path condition is then submitted to an SMT solver such as Z3~\cite{z3-solver}, which determines whether the condition is satisfiable and, if so, produces concrete values for the symbolic variables (called witnesses) that satisfy it.
+When KLEE explores Path 3, the variable $\mathtt{result}$ has no prior assignment in the symbolic state.
+When execution reaches the $\texttt{return result}$ statement, the engine evaluates a load from the symbolic memory.
+Because $\mathtt{result}$ has no defined symbolic value, this load produces an \emph{uninitialized read}, which KLEE reports immediately.
+
+Although the solver is consulted incrementally at each branch to determine feasibility, KLEE also invokes the solver at the end of each feasible path to construct a concrete assignment (a witness) that satisfies that path condition.
 The paths, conditions, and corresponding witnesses are summarized in \Cref{tab:max-paths}.
 \smallskip
 \begin{table}[ht]
@@ -102,10 +166,14 @@ Several mature SE engines have demonstrated the practical value of the technique
 KLEE~\cite{KLEE@OSDI-08} has been widely used to analyze system libraries and embedded utilities, achieving high coverage and uncovering numerous real-world bugs. 
 S2E~\cite{S2E@12} extends SE to full-system environments, allowing analysis of complex binaries that interact with operating systems services and hardware abstractions.
 
+\subsection{Challenges of Symbolic Execution}
 Despite its strengths, SE also faces several well-known limitations.
-The number of feasible execution paths in a program typically grows exponentially with the number of branches, a common phenomenon known as path explosion problem.
-Constraint solving becomes increasingly expensive when programs manipulate pointer-heavy data structures, arrays with symbolic indices, or arithmetic expressions whose satisfiability requires nonlinear reasoning.
-Furthermore, many real-world programs interact with their environment through file systems, network sockets, timers, or other operating system services.
+
+\textbf{Path explosion.} The number of feasible execution paths in a program typically grows exponentially with the number of branches, a common phenomenon known as the path-explosion problem.
+
+\textbf{Constraint complexity.} Constraint solving becomes increasingly expensive when programs manipulate pointer-heavy data structures, arrays with symbolic indices, or arithmetic expressions whose satisfiability requires nonlinear reasoning.
+
+\textbf{Environment modeling.} Real-world programs interact with their environment through file systems, network sockets, timers, or other operating system services.
 Accurately modeling these external effects is challenging, and incomplete models can restrict the precision or scalability of the analysis.
 
 These limitations are amplified in the context of network protocol implementations. 
