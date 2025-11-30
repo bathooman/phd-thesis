@@ -78,8 +78,429 @@ location = {Budapest, Hungary},
 series = {TACAS'08/ETAPS'08}
 }
 
+%%============================
+%% Model Based Testing
+%%============================
 
+@proceedings{MBT-reactive@2005,
+	editor    = {Manfred Broy and
+	Bengt Jonsson and
+	Joost{-}Pieter Katoen and
+	Martin Leucker and
+	Alexander Pretschner},
+	title     = {Model-Based Testing of Reactive Systems, Advanced Lectures},
+	series    = {LNCS},
+	volume    = {3472},
+	publisher = {Springer},
+	year      = {2005},
+	url       = {https://doi.org/10.1007/b137241},
+	doi       = {10.1007/b137241},
+	isbn      = {3-540-26278-4},
+}
 
+@book{Utting:mbt@2006,
+	author    = {Mark Utting and
+	Bruno Legeard},
+	title     = {Practical Model-Based Testing - {A} Tools Approach},
+	publisher = {Morgan Kaufmann},
+	edition   = {1st},
+	month     = nov,
+	year      = {2006},
+	url       = {http://www.elsevierdirect.com/product.jsp?isbn=9780123725011},
+	isbn      = {978-0-12-372501-1},
+}
+
+%%============================
+%% Fuzz Testing
+%%============================
+
+@Misc{AFL,
+	author  = {Micha\l{} Zalewski},
+	title   = {American Fuzzy Lop},
+	year    = {2013},
+	howpublished = {\url{http://lcamtuf.coredump.cx/afl/}},
+}
+
+@InProceedings {AFLplusplus-Woot20,
+	author = {Andrea Fioraldi and Dominik Maier and Heiko Ei{\ss}feldt and Marc Heuse},
+	title = {{AFL++}: Combining Incremental Steps of Fuzzing Research},
+	booktitle = {14th {USENIX} Workshop on Offensive Technologies ({WOOT} 20)},
+	year = {2020},
+	publisher = {{USENIX} Association},
+	month = aug,
+}
+
+@InProceedings{AFLNET@ICST-20,
+	author = {Pham, Van-Thuam and B{\"o}hme, Marcel and Roychoudhury, Abhik},
+	title = {{AFLNET}: A Greybox Fuzzer for Network Protocols}, 
+	booktitle = {IEEE 13th International Conference on Software Testing, Validation and Verification},
+	series = {ICST 2020}, 
+	pages = {460--465},
+	month = oct,
+	year = {2020},
+	publisher = {IEEE},
+	url = {https://ieeexplore.ieee.org/document/9159093},
+	doi = {10.1109/ICST46399.2020.00062},
+}
+
+@InProceedings{LTL-Fuzzer@ICSE-22,
+	author = {Meng, Ruijie and Dong, Zhen and Li, Jialin and Beschastnikh, Ivan and Roychoudhury, Abhik},
+	title = {Linear-time Temporal Logic guided Greybox Fuzzing},
+	booktitle = {Proceedings of the 44th International Conference on Software Engineering},
+	series = {ICSE' 22},
+	pages = {1343--1355},
+	numpages = {13},
+	month = may,
+	year = {2022},
+	publisher = {ACM},
+	address = {New York, NY, USA},
+	url = {https://doi.acm.com/10.1145/3510003.3510082},
+	doi = {10.1145/3510003.3510082}
+}
+
+@InProceedings{SnapFuzz@ISSTA-22,
+	author    = {Anastasios Andronidis and Cristian Cadar},
+	title     = {{SnapFuzz}: High-throughput Fuzzing of Network Applications},
+	booktitle = {31st {ACM} {SIGSOFT} International Symposium on Software
+	Testing and Analysis},
+	series    = {{ISSTA} '22},
+	pages     = {340--351},
+	month     = jul,
+	year      = {2022},
+	publisher = {{ACM}},
+	address   = {New York, NY, USA},
+	url       = {https://doi.org/10.1145/3533767.3534376},
+	doi       = {10.1145/3533767.3534376},
+}
+
+%%============================
+%% Differential Testing
+%%============================
+@article{McKeeman@DiffTesting,
+	title = {Differential testing for software},
+	author = {McKeeman, William M},
+	journal = {Digital Technical Journal},
+	volume = {10},
+	number = {1},
+	pages = {100--107},
+	year = {1998}
+}
+
+@inproceedings{RFCcert@ICSE-18,
+	author    = {Chu Chen and
+	Cong Tian and
+	Zhenhua Duan and
+	Liang Zhao},
+	editor    = {Michel Chaudron and
+	Ivica Crnkovic and
+	Marsha Chechik and
+	Mark Harman},
+	title     = {{RFC}-directed differential testing of certificate validation in
+	{SSL/TLS} implementations},
+	booktitle = {Proceedings of the 40th International Conference on Software Engineering},
+	series    = {{ICSE} 2018},
+	location  = {Gothenburg, Sweden},
+	pages     = {859--870},
+	publisher = {{ACM}},
+	month     = may # "--" # jun,
+	year      = {2018},
+	url       = {https://doi.org/10.1145/3180155.3180226},
+	doi       = {10.1145/3180155.3180226},
+}
+
+@InProceedings{SymCerts,
+	author    = {Sze Yiu Chau and
+	Omar Chowdhury and
+	Md. Endadul Hoque and
+	Huangyi Ge and
+	Aniket Kate and
+	Cristina Nita{-}Rotaru and
+	Ninghui Li},
+	title     = {{SymCerts}: Practical Symbolic Execution for Exposing Noncompliance
+	in {X.509} Certificate Validation Implementations},
+	pages     = {503--520},
+	booktitle = {2017 {IEEE} Symposium on Security and Privacy},
+	series    = {{SP} 2017},
+	location  = {San Jose, CA, USA},
+	month     = may,
+	publisher = {{IEEE} Computer Society},
+	year      = {2017},
+	url       = {https://doi.org/10.1109/SP.2017.40},
+	doi       = {10.1109/SP.2017.40},
+}
+
+@InProceedings{PKCS,
+	author    = {Sze Yiu Chau and
+	Moosa Yahyazadeh and
+	Omar Chowdhury and
+	Aniket Kate and
+	Ninghui Li},
+	title     = {Analyzing Semantic Correctness with Symbolic Execution: {A} Case Study
+	on {PKCS{\#}1 v1.5} Signature Verification},
+	booktitle = {26th Annual Network and Distributed System Security Symposium},
+	series    = {NDSS 2019},
+	location  = {San Diego, CA, USA},
+	month     = feb,
+	publisher = {The Internet Society},
+	year      = {2019},
+	longurl       = {https://www.ndss-symposium.org/ndss-paper/analyzing-semantic-correctness-with-symbolic-execution-a-case-study-on-pkcs1-v1-5-signature-verification/},
+	url       = {https://doi.org/10.14722/ndss.2019.23430},
+	doi       = {10.14722/ndss.2019.23430},
+}
+
+%%============================
+%% Grammar-based Input Generation
+%%============================
+
+@Misc{Peach@2004,
+	author  = {Michael Eddington},
+	title   = {Peach Fuzzer},
+	year    = {2004},
+	howpublished = {\url{https://peachtech.gitlab.io/peach-fuzzer-community/}},
+}
+
+@Misc{SPIKE@2002,
+	author  = {Dave Aitel},
+	title   = {An Introduction to SPIKE, the Fuzzer Creation Kit},
+	year    = {2002},
+	howpublished = {\url{https://blackhat.com/presentations/bh-usa-02/bh-us-02-aitel-spike.ppt}},
+}
+
+%%============================
+%% Model learning studies
+%%============================
+
+@inproceedings{SSH@SPIN-2017,
+	author = {Paul Fiter\u{a}u-Bro\c{s}tean and Toon Lenaerts and Joeri de Ruiter and Erik Poll and Frits W. Vaandrager and Patrick Verleg},
+	title = {Model Learning and Model Checking of {SSH} Implementations},
+	booktitle = {Proceedings of the 24th ACM SIGSOFT International SPIN Symposium on Model Checking of Software},
+	series = {SPIN 2017},
+	year = {2017},
+	isbn = {978-1-4503-5077-8},
+	location = {Santa Barbara, CA, USA},
+	pages = {142--151},
+	publisher = {ACM},
+	url = {https://doi.org/10.1145/3092282.3092289},
+	doi = {10.1145/3092282.3092289},
+} 
+
+@inproceedings{FJV2016,
+	author = {Paul Fiter\u{a}u-Bro\c{s}tean and Ramon Janssen and Frits W. Vaandrager},
+	title = {Combining Model Learning and Model Checking to Analyze {TCP} Implementations},
+	booktitle = {Computer Aided Verification - 28th International Conference, {CAV} 2016, Proceedings, Part {II}},
+	pages = {454--471},
+	year = {2016},
+	series = {LNCS},
+	volume = {9780},
+	publisher = {Springer},
+	url = {https://doi.org/10.1007/978-3-319-41540-6\_25},
+	doi = {10.1007/978-3-319-41540-6\_25},
+}
+
+@inproceedings{ruiter2015,
+	author = {{de Ruiter}, Joeri and Poll, Erik},
+	title = {Protocol State Fuzzing of {TLS} Implementations},
+	booktitle = {24th {USENIX} Security Symposium},
+	pages = {193--206},
+	publisher = {USENIX Association},
+	location = {Washington, D.C., USA},
+	month = aug,
+	year = {2015},
+	url = {https://www.usenix.org/conference/usenixsecurity15/technical-sessions/presentation/de-ruiter},
+}
+
+@inproceedings{poll:session-languages,
+	author    = {Erik Poll and
+	Joeri de Ruiter and
+	Aleksy Schubert},
+	title     = {Protocol State Machines and Session Languages:
+	Specification, Implementation, and Security Flaws},
+	booktitle = {{IEEE} Symposium on Security and Privacy Workshops},
+	series    = {SPW 2015},
+	pages     = {125--133},
+	location  = {San Jose, CA, USA},
+	month     = may,
+	year      = {2015},
+	url       = {https://doi.org/10.1109/ICST.2017.32},
+	doi       = {10.1109/SPW.2015.32},
+	publisher = {{IEEE} Computer Society},
+}
+
+@inproceedings{Tappler@ICST-2017,
+	author    = {Martin Tappler and
+	Bernhard K. Aichernig and
+	Roderick Bloem},
+	title     = {Model-Based Testing {IoT} Communication via Active Automata Learning},
+	booktitle = {Software Testing, Verification and Validation, ({ICST}) 2017 {IEEE} International Conference on},
+	location  = {Tokyo, Japan},
+	pages     = {276--287},
+	month     = mar,
+	year      = {2017},
+	publisher = {{IEEE} Computer Society},
+	url       = {https://doi.org/10.1109/ICST.2017.32},
+	doi       = {10.1109/ICST.2017.32},
+	keywords  = {active automata learning, LBT, protocols, testing},
+}
+
+@inproceedings{OpenVPN@EuroSPW-2018,
+	author = {Daniel, Lesly-Ann and Poll, Erik and de Ruiter, Joeri},
+	title = {Inferring {OpenVPN} State Machines Using Protocol State Fuzzing},
+	booktitle = {{IEEE} European Symposium on Security and Privacy (EuroS\&P) Workshops},
+	pages = {11--19},
+	month = apr,
+	year = {2018},
+	organization = {IEEE},
+	location = {London, U.K.},
+	url = {https://doi.org/10.1109/EuroSPW.2018.00009},
+	doi = {10.1109/EuroSPW.2018.00009},
+}
+
+@inproceedings{NDSS23,
+	author       = {Paul Fiterau{-}Brostean and
+	Bengt Jonsson and
+	Konstantinos Sagonas and
+	Fredrik T{\aa}quist},
+	title        = {Automata-Based Automated Detection of State Machine Bugs in Protocol
+	Implementations},
+	booktitle    = {30th Annual Network and Distributed System Security Symposium, {NDSS}
+	2023, San Diego, California, USA, February 27 - March 3, 2023},
+	publisher    = {The Internet Society},
+	year         = {2023},
+	url          = {https://www.ndss-symposium.org/ndss-paper/automata-based-automated-detection-of-state-machine-bugs-in-protocol-implementations/},
+}
+
+@incollection{FH2017,
+	author = {Fiter{\u{a}}u-Bro{\c{s}}tean, Paul and Howar, Falk},
+	title = {Learning-Based Testing the Sliding Window Behavior of {TCP} Implementations},
+	booktitle = {Critical Systems: Formal Methods and Automated Verification -
+	Joint 22nd International Workshop on Formal Methods for
+	Industrial Critical Systems and 17th International
+	Workshop on Automated Verification of Critical Systems,
+	FMICS-AVoCS 2017},
+	pages = {185--200},
+	month = sep,
+	year = {2017},
+	series = {LNCS},
+	volume = {10471},
+	publisher = {Springer},
+	location = {Turin, Italy},
+	url = {https://doi.org/10.1007/978-3-319-67113-0\_12},
+	doi = {10.1007/978-3-319-67113-0\_12},
+}
+
+@unpublished{rasool2019,
+	author = {Rasool, Abdullah and Alp{\'a}r, Greg and de Ruiter, Joeri},
+	title = {State machine inference of {QUIC}},
+	year = {2019},
+	note = {arXiv preprint arXiv:1903.04384},
+}
+
+@inproceedings{stone2018,
+	author = {McMahon Stone, Chris and Chothia, Tom and de Ruiter, Joeri},
+	title = {Extending Automated Protocol State Learning for the 802.11 4-Way Handshake},
+	booktitle = {Computer Security},
+	pages = {325--345},
+	month = aug,
+	year = {2018},
+	series = {LNCS},
+	volume = {11098},
+	publisher = {Springer International Publishing},
+	address = {Cham},
+	doi = {10.1007/978-3-319-99073-6_16},
+}
+
+@InProceedings{Aarts13, 
+	author = {Fides Aarts and Joeri de Ruiter and Erik Poll},
+	title = {Formal Models of Bank Cards for Free},
+	booktitle = {4th International Workshop on Security Testing},
+	series = {SECTEST 2013},
+	isbn = {978-1-4799-1324-4},
+	year = {2013},
+	pages = {461--468},
+	url = {http://doi.ieeecomputersociety.org/10.1109/ICSTW.2013.60},
+	doi = {10.1109/ICSTW.2013.60},
+	publisher = {IEEE Computer Society},
+	address = {Los Alamitos, CA, USA},
+}
+
+@MastersThesis{drueten2019,
+	author = {van Drueten, Niels},
+	title = {Security analysis of {DTLS} 1.2 implementations},
+	school = {Radboud University, Nijmegen, The Netherlands},
+	type = {Bachelor thesis},
+	year = {2019},
+}
+
+@InProceedings{DTLS@USENIX-20,
+	author = {Paul Fiter\u{a}u-Bro\c{s}tean and Bengt Jonsson and Robert Merget and Joeri de Ruiter and Konstantinos Sagonas and Juraj Somorovsky},
+	title = {Analysis of {DTLS} Implementations Using Protocol State Fuzzing},
+	booktitle = {29th {USENIX} Security Symposium ({USENIX} Security 20)},
+	pages = {2523--2540},
+	month = aug,
+	year = {2020},
+	url = {https://www.usenix.org/conference/usenixsecurity20/presentation/fiterau-brostean},
+	publisher = {{USENIX} Association},
+}
+
+@InProceedings{DTLS-Fuzzer@ICST-22,
+	author = {Paul Fiter\u{a}u-Bro\c{s}tean and Bengt Jonsson and Konstantinos Sagonas and Fredrik T{\aa}quist},
+	title = {{DTLS-Fuzzer}: A {DTLS} Protocol State Fuzzer},
+	booktitle = {15th IEEE International Conference on Software Testing, Verification and Validation},
+	series = {{ICST} 2022},
+	month = apr,
+	year = {2022},
+	publisher = {{IEEE} Computer Society},
+}
+
+@inproceedings{EDHOC-Fuzzer@ISSTA-23,
+	author = {Sagonas, Konstantinos and Typaldos, Thanasis},
+	title = {{EDHOC-Fuzzer}: An {EDHOC} protocol state fuzzer},
+	booktitle = {Proceedings of the 32nd ACM SIGSOFT International Symposium on Software Testing and Analysis},
+	series = {{ISSTA} '23},
+	editor = {Ren{\'{e}} Just and Gordon Fraser},
+	pages = {1495--1498},
+	month = jul,
+	year = {2023},
+	location = {Seattle, WA, USA},
+	address = {New York, NY, USA},
+	publisher = {ACM},
+	url = {https://doi.org/10.1145/3597926.3604922},
+	doi = {10.1145/3597926.3604922},
+}
+
+@article{IPSec@IEEEAccess-2019,
+	author = {Guo, Jiaxing and Gu, Chunxiang and Chen, Xi and Wei, Fushan},
+	title = {Model Learning and Model Checking of {IPSec} Implementations for {Internet of Things}},
+	journal = {IEEE Access},
+	volume = {7},
+	pages = {171322--171332},
+	month = nov,
+	year = {2019},
+	publisher = {IEEE},
+	url = {https://ieeexplore.ieee.org/document/8913552},
+	doi = {10.1109/ACCESS.2019.2956062},
+}
+
+@Article{MessyTLS@CACM-2017,
+	author = {Benjamin Beurdouche and
+	Karthikeyan Bhargavan and
+	Antoine Delignat-Lavaud and
+	C{\'e}dric Fournet and
+	Markulf Kohlweiss and
+	Alfredo Pironti and
+	Pierre-Yves Strub and
+	Jean Karim Zinzindohoue},
+	title = {A Messy State of the Union: Taming the Composite State Machines of {TLS}},
+	journal = {Commun. {ACM}},
+	volume = {60},
+	number = {2},
+	pages = {99--107},
+	month = feb,
+	year = {2017},
+	doi = {10.1145/3023357},
+	url = {https://doi.org/10.1145/3023357},
+	publisher = {ACM}
+}
 
 %%============================
 %% Misc
@@ -166,7 +587,13 @@ series = {TACAS'08/ETAPS'08}
 
 @misc{RFC7252,
 	author =	{Zach Shelby and Klaus Hartke and Carsten Bormann},
-	title =	{The Constrained Application Protocol ({CoAP})},
+	title =	{The Constrained Application Protoco@article{tretmans1996test,
+	title={Test generation with inputs, outputs and repetitive quiescence},
+	author={Tretmans, Gerrit Jan},
+	year={1996},
+	publisher={Centre for Telematics and Information Technology (CTIT)}
+	}
+	l ({CoAP})},
 	series =	{Request for Comments},
 	number =	{7252},
 	howpublished = {RFC 7252},
@@ -176,4 +603,16 @@ series = {TACAS'08/ETAPS'08}
 	pagetotal =	112,
 	year =	2014,
 	month =	jun,
+}
+
+@misc{RFC2119,
+	author = {Bradner, S.},
+	title = {Key words for use in {RFCs} to {I}ndicate {R}equirement {L}evels},
+	series = "Request for Comments",
+	number = {2119},
+	howpublished = {RFC 2119},
+	month = mar,
+	year = {1997},
+	url = {https://www.rfc-editor.org/info/rfc2119},
+	doi = {10.17487/RFC2119}
 }

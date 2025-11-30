@@ -17,3 +17,19 @@
 % Document links and bookmarks
 \usepackage{hyperref} 
 \usepackage{cleveref}
+
+\usepackage{csquotes} % For displayquote
+\newcommand{\rfcdisplayquote}[1]{%
+	\begingroup%
+	\vskip .25em%
+	\addtolength\leftmargini{-1em}%
+	\begin{displayquote}%
+		\textsl{\small #1}%
+	\end{displayquote}%
+	\vskip .15em%
+	\endgroup%
+	\noindent%
+}
+
+\newcommand{\rfc}[1]{\texttt{#1}}
+\newcommand{\rfcm}[1]{\mathtt{\scriptstyle#1}}
