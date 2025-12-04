@@ -176,9 +176,10 @@ Despite its strengths, SE also faces several well-known limitations.
 \textbf{Environment modeling.} Real-world programs interact with their environment through file systems, network sockets, timers, and other operating-system services. 
 Because symbolic execution is a white-box technique, it can only reason about behavior that is executed inside the symbolic interpreter. 
 External services operate outside this scope and return concrete data such as file contents, incoming packets, or timer values that the engine cannot control or fork. 
-For example, a network read depends on the exact bytes delivered by the OS, which cannot be treated symbolically without replacing the socket interface with a model. 
-Supporting symbolic execution therefore requires reimplementing such interactions in symbolic form, a process that is difficult to do comprehensively and can significantly affect scalability.
-
+For example, a network read depends on the exact bytes delivered by the OS, which cannot be treated symbolically without replacing the socket interface with a model that produces symbolic data. 
+Many SE engines therefore fall back on \emph{concretization}, supplying fixed concrete values for such interactions when no model is available. 
+While this allows execution to proceed, concretization restricts exploration to a single concrete behavior and may cause the engine to miss feasible paths that depend on alternative inputs. 
+Symbolic models avoid this loss of coverage but are difficult to implement comprehensively and can significantly affect scalability.
 
 Taken together, these challenges are amplified in the context of network protocol implementations.
 Reaching specific protocol states often requires carefully orchestrated sequences of inputs, some of which depend on subtle constraints encoded in the specification.

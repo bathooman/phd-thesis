@@ -6,8 +6,8 @@ For example, a field in one message may depend on a value in a previous message,
 
 Testing such requirements is challenging. 
 Traditional fuzzers concentrate on triggering crashes and often operate without awareness of protocol state.
-Standard symbolic execution (SE) tools are powerful for analyzing single inputs, yet they do not directly address multi packet interactions or stateful requirements.
-When applied naively to protocol implementations, these tools either fail to explore relevant paths or become overwhelmed by the path explosion caused by large input structures.
+Standard symbolic execution (SE) tools are powerful for analyzing single inputs, yet they do not directly address multi-packet interactions or stateful requirements.
+When applied naively to protocol implementations, these tools either fail to explore relevant paths or become overwhelmed by the path explosion caused by large input space.
 
 The work presented in this chapter introduces a technique that applies SE in a requirement driven manner.
 The aim is to systematically search for inputs that violate specific RFC requirements and to produce concrete packet sequences that expose the deviation in the implementation under test.
@@ -19,15 +19,23 @@ The first step is to extract protocol requirements from the RFC text and express
 RFCs typically use particular keywords such as "MUST", "MUST NOT", "REQUIRED", "SHALL", and "SHALL NOT" to indicate the strictness of a requirement~\cite{RFC2119}.
 These statements can be formulated into predicates that describe how packets must be structured and how they relate to one another.
 
-A simple but representative example appears in the DTLS RFC~\cite[p. 13]{RFC6347}, which specifies the uniqueness of record sequence numbers within a session.
+To express these predicates precisely, we adopt a simple model of interaction.
+A DTLS session is viewed as a finite sequence of records received by one protocol party; we denote this sequence by $R$.
+We write $r, r' \, \in \, R$ to range over individual records in the sequence.
+Equality between records refers to their position in the sequence: $r = r'$ means that they are the same occurrence of a record, not merely two records with identical contents.
+Each record is a structured object containing fields such as \rfc{type}, \rfc{epoch}, and \rfc{sequence\_number}.
+For example, $r\rfcm{.sequence\_number}$ is used to refer to the sequence number of a record $r$.
+
+A simple yet representative example appears in the DTLS RFC~\cite[p. 13]{RFC6347}, which specifies the uniqueness of record sequence numbers within a session.
 Each DTLS record contains a 48-bit \rfc{sequence\_number} field that uniquely identifies the record within a session.
 This field is incremented for every record sent, usually starting from zero. 
 The receiver uses sequence numbers to process records in the correct order and to detect duplicates, since any two records with the same \rfc{sequence\_number} represent a replay.
+The requirement is formulated in the RFC as follows:
 %
 \rfcdisplayquote{%
 For each received record, the receiver MUST verify that the record contains a sequence number that does not duplicate the sequence number of any other record received during the life of this session.}%
 %
-This requirement serves as a protection against replayed records (packets).
+This requirement serves as a protection against replayed records.
 For a set of records $R$ received during a DTLS session, the requirement can be expressed in predicate logic as:
 %
 \begin{equation}\label{const:rsnuniqueness}\normalsize
@@ -37,26 +45,40 @@ For a set of records $R$ received during a DTLS session, the requirement can be 
 %
 This formula captures the essential rule that no two records may share the same sequence number.
 Requirements of this kind, which relate fields across multiple packets, appear frequently in network protocol specifications. 
-Once formulated, they provide a precise basis for guiding the SE engine toward the regions of the input space where potential violations may occur.
+Once formulated, these predicates can be used to restrict SE to those parts of the input space where a violation of the requirement may occur.
 
 \subsection{Symbolic Execution}
-Symbolic execution is applied to each tested implementation through a dedicated test harness that replays a pre-captured sequence of records from a valid DTLS handshake and passes them one at a time to the implementation under test. 
+Symbolic execution is applied to each tested implementation through a dedicated test harness that replays a pre-captured sequence of records from a valid DTLS handshake and passes them one at a time to the implementation under test.
 Each record is parsed into a structured representation, which enables SE to access and manipulate selected fields. 
 The harness provides a deterministic environment by controlling the order of record processing and by removing nondeterministic behavior such as cookie verification or timeouts.
 
-With the test harness in place, the next step is to select which fields should be made symbolic for checking a requirement.
-In our technique, only those fields in a record that are relevant to the requirement being tested are made symbolic, while the remaining fields retain their concrete values from the pre-captured handshake.
-This selective approach focuses SE on the parts of the input space that influence the requirement, while avoiding possible path explosion if entire records were made symbolic.
+Symbolic execution requires the implementation under test to behave in a fully deterministic manner.
+Any nondeterministic behavior such as random number generation, retransmissions, or time-based actions would cause the symbolic executor to branch unnecessarily or to follow paths that differ from those observed during record capture.
+For this reason, the harness must execute deterministically so that the same control flow is obtained both when capturing the handshake and when symbolically executing it.
+A deterministic setup ensures that any variation observed by SE arises solely from symbolic fields.
+Pre-captured records are used for the same reason.
+A full DTLS handshake contains many fields that are irrelevant for a given requirement, and making entire records symbolic would cause path explosion.
+By replaying a fixed valid sequence and making symbolic only the fields involved in the requirement, we restrict SE to the part of the input space where a violation may occur.
+Parsing records into structured representations further supports this goal by allowing the analysis to target individual protocol fields rather than byte arrays.
 
-To ensure that SE concentrates on violating cases rather than on the vast space of valid inputs, the harness introduces assumptions that encode the negation of the requirement.
-These assumptions restrict SE to inputs under which the requirement may be broken.
+The requirements we consider fall into two classes. 
+The first class consists of input-validity requirements, which specify conditions that each received record must satisfy. 
+These requirements describe how the implementation should reject malformed inputs. 
+When checking an input-validity requirement, SE makes the relevant fields symbolic and introduces assumptions that correspond to the negation of the requirement.
+This directs the analysis toward inputs under which the requirement may be violated, and an assertion is used to detect if the implementation processes such invalid inputs in a forbidden way. 
+The second class consists of input-output requirements. 
+These requirements describe how an implementation must respond to valid inputs, for example by producing an output message whose fields satisfy a specified relation. 
+For these requirements, SE assumes that the input is valid and places the requirement itself in an assertion that checks the correctness of the generated output.
+
+For input-validity requirements, SE must concentrate on violating cases rather than on the vast space of valid inputs, so the harness introduces assumptions that encode the negation of the requirement.
+These assumptions restrict SE to inputs under which the requirement may be violated.
 The final step is to check whether the implementation uses the invalid input in a forbidden way.
 This can be done by checking whether protocol state progresses after reception of invalid records.
 We approximate this by successful completion of the protocol handshake. 
 A failing assertion is inserted at the point in the implementation code where the handshake finishes successfully.
 If SE reaches this assertion, it means that the implementation completed the handshake even though it received an invalid record, which indicates a violation of the requirement.
 
-The predicate in \Cref{const:rsnuniqueness} formulates the DTLS requirement that no two records in a session may share the same sequence number.
+The predicate in \Cref{const:rsnuniqueness} formulates an input-validity requirement that states that no two records in a session share the same sequence number.
 To apply our technique to evaluate this requirement for a server, the harness loads the sequence of pre-captured records that a DTLS server would receive during its handshake and marks the client-side \rfc{sequence\_number} fields as symbolic.
 All other fields remain concrete.
 
@@ -66,6 +88,11 @@ To evaluate the effect of this invalid input, an assertion is placed at the code
 If SE reaches this assertion, it means that the implementation completed the handshake even though it received a record with a duplicate sequence number. 
 The assertion then fails, and the SE engine reports the concrete assignments that triggered this behavior.
 
+In our implementation, handshake completion is detected by instrumenting the code at the point where the implementation expects to receive and process the \emph{Finished} message. 
+This point marks the transition into the encrypted phase of DTLS and therefore indicates that the handshake has completed successfully. 
+A failing assertion is inserted at this location. 
+If SE reaches this assertion, it means that the implementation progressed through the handshake despite having received an invalid input earlier in the sequence. 
+This provides a uniform and lightweight method for detecting forbidden progress across different DTLS implementations without requiring detailed inspection of their internal state machines.
 \subsection{Test Case Construction and Validation}
 When SE discovers a violating execution path, the engine provides concrete values for all symbolic fields involved.
 To construct a test case, these values are substituted back into the structured record representations used by the test harness, while all remaining fields retain their original concrete values from the pre-captured handshake.
@@ -80,14 +107,14 @@ Since handshake completion is used as an approximation for protocol progress, a 
 In the sequence number example, if the server completes its handshake despite the duplicate sequence number, the requirement is violated and the test case is confirmed.
 
 \section{Summary of Results}
-The technique was applied to four implementations of the DTLS protocol. These included OpenSSL, MbedTLS, and two variants of TinyDTLS. A collection of sixteen requirements from the DTLS RFC~\cite{RFC6347} were formulated and tested. These requirements ranged from record layer constraints, such as content type, version fields, and epoch handling, to handshake layer rules related to message ordering, fragmentation, and message sequence numbers.
+The technique was applied to four implementations of the DTLS protocol. These included OpenSSL, MbedTLS, and two variants of TinyDTLS. A collection of sixteen requirements from the DTLS RFC~\cite{RFC6347} were formulated and tested. These requirements ranged from record layer constraints, concerning content type, version fields, and epoch handling, to handshake layer rules related to message ordering, fragmentation, and message sequence numbers.
 
 The evaluation revealed a total of thirty six unique bugs, seven of which were classified as vulnerabilities. Several issues were memory related, including out of bounds accesses during message reassembly. Others concerned logical violations of the specification, such as incorrect validation of version fields, improper handling of repeated handshake messages, and failures to respect message ordering rules. Many issues were identified within a short symbolic exploration time, and all of them were acknowledged and fixed by the developers.
 
 In addition to uncovering new issues, our technique also reproduced a known exploitable vulnerability in OpenSSL's function for reassembling fragmented messages.
 This reproduction confirms the power and promise of our technique.
 
-For a detailed description of the technique's implementation, the full set of requirements we evaluated, and a comprehensive analysis of the issues we discovered, the reader is referred to \textcolor{red}{Paper 1} included later in this thesis.
+For a detailed description of the technique's implementation, the full set of input-validity and input-output requirements we evaluated, and a comprehensive analysis of the issues we discovered, the reader is referred to \textcolor{red}{Paper 1} included later in this thesis.
 \section{Limitations}
 The technique presented in this chapter has two main limitations that motivate the next contribution of this thesis.
 The first limitation is that the code responsible for checking requirements must be directly inserted into the source code of the implementation under test.
