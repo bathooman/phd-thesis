@@ -1,4 +1,4 @@
-\chapter{From Specifications to Oracles: Requirement-Driven Symbolic Execution}\label{sec:paper1}
+\chapter{From Specifications to Oracles: Requirement-Driven Symbolic Execution}\label{chapter:paper1}
 Network protocols rely on precise specifications that describe how communicating parties should construct messages, how state is expected to evolve during an interaction, and how error conditions must be handled.
 These specifications are expressed in RFC documents, where natural language is used to formulate requirements.
 Many of these requirements involve relationships across multiple packets.
@@ -19,7 +19,7 @@ The first step is to extract protocol requirements from the RFC text and express
 RFCs typically use particular keywords such as "MUST", "MUST NOT", "REQUIRED", "SHALL", and "SHALL NOT" to indicate the strictness of a requirement~\cite{RFC2119}.
 These statements can be formulated into predicates that describe how packets must be structured and how they relate to one another.
 
-To express these predicates precisely, we adopt a simple model of interaction.
+To express such predicates precisely, we adopt a simple model of interaction.
 A DTLS session is viewed as a finite sequence of records received by one protocol party; we denote this sequence by $R$.
 We write $r, r' \, \in \, R$ to range over individual records in the sequence.
 Equality between records refers to their position in the sequence: $r = r'$ means that they are the same occurrence of a record, not merely two records with identical contents.
@@ -29,7 +29,7 @@ For example, $r\rfcm{.sequence\_number}$ is used to refer to the sequence number
 A simple yet representative example appears in the DTLS RFC~\cite[p. 13]{RFC6347}, which specifies the uniqueness of record sequence numbers within a session.
 Each DTLS record contains a 48-bit \rfc{sequence\_number} field that uniquely identifies the record within a session.
 This field is incremented for every record sent, usually starting from zero. 
-The receiver uses sequence numbers to process records in the correct order and to detect duplicates, since any two records with the same \rfc{sequence\_number} represent a replay.
+The receiver uses sequence numbers to process records in the correct order and to detect duplicates, since any two records with the same \rfc{sequence\_number} indicate a replay.
 The requirement is formulated in the RFC as follows:
 %
 \rfcdisplayquote{%
@@ -44,9 +44,30 @@ For a set of records $R$ received during a DTLS session, the requirement can be 
 \end{equation}
 %
 This formula captures the essential rule that no two records may share the same sequence number.
-Requirements of this kind, which relate fields across multiple packets, appear frequently in network protocol specifications. 
+Requirements of this kind, which relate fields across multiple packets, appear frequently in network protocol specifications.
+
+Another example of a requirement that relates multiple records concerns the DTLS epoch field.
+The epoch identifies which set of session keys were used to protect a record, and the RFC specifies that its value should be initialized with zero and increase exactly when a \emph{ChangeCipherSpec} is received~\cite[p. 8]{RFC6347}.
+Let $r_i$ denote the $i$th record in the sequence.
+For $n$ received records in a DTLS session, we capture this requirement with the following formula:
+\begin{equation*}\label{const:epoch}
+	\begin{split}
+		& \scriptstyle \forall i \in \mathbb{N}, 2 \leq i \leq n: \\[-5pt]  %% \forall r_i \in R:
+		& \scriptstyle \quad (r_1.\rfcm{epoch}\, =\, 0)\ \wedge \\[-5pt]
+		& \scriptstyle \quad (\mathtt{if}\ r_{i-1}.\rfcm{type}\ =\, \rfcm{change\_cipher\_spec}\
+		\mathtt{then}\ r_i.\rfcm{epoch}\ =\, r_{i-1}.\rfcm{epoch} + 1\\[-5pt]
+		& \scriptstyle \quad\ \mathtt{else}\ r_i.\rfcm{epoch}\, =\, r_{i-1}.\rfcm{epoch})
+	\end{split}
+\end{equation*}
+This formula specifies that the \rfc{epoch} of the first record is zero, and that for all subsequent records the value of the \rfc{epoch} field is either one greater than that of the previous record or equal to it, depending on whether the \rfc{type} field of the previous record is \rfc{change\_cipher\_spec}.
+
 Once formulated, these predicates can be used to restrict SE to those parts of the input space where a violation of the requirement may occur.
 
+Although the logical predicates are not executed directly, formulating the requirements in this way is still essential.
+RFC text is written in natural language and often describes relationships across multiple packets, message types, or stages of a handshake.
+Writing these requirements as predicates makes their meaning precise and exposes exactly which fields participate in them.
+This precision is necessary because SE must focus on the fields that matter for the requirement and explore the conditions under which the requirement may be violated.
+In short, the logical formulation defines the requirement in a clear and unambiguous way, and this definition is what guides the later testing steps.
 \subsection{Symbolic Execution}
 Symbolic execution is applied to each tested implementation through a dedicated test harness that replays a pre-captured sequence of records from a valid DTLS handshake and passes them one at a time to the implementation under test.
 Each record is parsed into a structured representation, which enables SE to access and manipulate selected fields. 
@@ -70,13 +91,15 @@ The second class consists of input-output requirements.
 These requirements describe how an implementation must respond to valid inputs, for example by producing an output message whose fields satisfy a specified relation. 
 For these requirements, SE assumes that the input is valid and places the requirement itself in an assertion that checks the correctness of the generated output.
 
-For input-validity requirements, SE must concentrate on violating cases rather than on the vast space of valid inputs, so the harness introduces assumptions that encode the negation of the requirement.
+For input-validity requirements, SE must concentrate on requirement-violating inputs rather than on the vast space of valid inputs, so the harness introduces assumptions that encode the negation of the requirement.
 These assumptions restrict SE to inputs under which the requirement may be violated.
 The final step is to check whether the implementation uses the invalid input in a forbidden way.
-This can be done by checking whether protocol state progresses after reception of invalid records.
-We approximate this by successful completion of the protocol handshake. 
-A failing assertion is inserted at the point in the implementation code where the handshake finishes successfully.
-If SE reaches this assertion, it means that the implementation completed the handshake even though it received an invalid record, which indicates a violation of the requirement.
+Protocols differ in how malformed inputs must be handled.
+Some specifications require discarding the input, others mandate generating an alert, and others require immediate termination of the connection.
+In DTLS, the general rule~\cite[p. 14]{RFC6347} for handling invalid records requires discarding them and states that implementations may generate a fatal-level alert message.
+For DTLS, we therefore approximate forbidden behavior by checking whether the handshake nonetheless progresses.
+A failing assertion is inserted at the point where the implementation reaches the code that completes the handshake.
+If SE reaches this point, it means that the implementation advanced through the handshake despite the invalid input, which indicates a violation of the requirement.
 
 The predicate in \Cref{const:rsnuniqueness} formulates an input-validity requirement that states that no two records in a session share the same sequence number.
 To apply our technique to evaluate this requirement for a server, the harness loads the sequence of pre-captured records that a DTLS server would receive during its handshake and marks the client-side \rfc{sequence\_number} fields as symbolic.
@@ -84,7 +107,7 @@ All other fields remain concrete.
 
 An assume statement is then introduced that indicates that at least two symbolic sequence numbers are equal.
 This directs SE to explore precisely those assignments that violate uniqueness.
-To evaluate the effect of this invalid input, an assertion is placed at the code location that indicates successful completion of the handshake. 
+To evaluate the effect of this invalid input, a failing assertion is placed at the code location that indicates successful completion of the handshake. 
 If SE reaches this assertion, it means that the implementation completed the handshake even though it received a record with a duplicate sequence number. 
 The assertion then fails, and the SE engine reports the concrete assignments that triggered this behavior.
 
@@ -95,7 +118,7 @@ If SE reaches this assertion, it means that the implementation progressed throug
 This provides a uniform and lightweight method for detecting forbidden progress across different DTLS implementations without requiring detailed inspection of their internal state machines.
 \subsection{Test Case Construction and Validation}
 When SE discovers a violating execution path, the engine provides concrete values for all symbolic fields involved.
-To construct a test case, these values are substituted back into the structured record representations used by the test harness, while all remaining fields retain their original concrete values from the pre-captured handshake.
+To construct a test case, these values are substituted back into the structured record representations used by the test harness, while all other fields retain their original concrete values from the pre-captured handshake.
 The resulting records are then serialized into byte arrays that follow the exact wire format of the protocol.
 
 For the sequence number requirement, this means that SE produces a concrete assignment in which two records share the same sequence number. 
@@ -106,10 +129,11 @@ Validation is done by observing whether the unmodified implementation accepts th
 Since handshake completion is used as an approximation for protocol progress, a successful handshake in the presence of an invalid record constitutes a confirmed violation of the corresponding requirement.
 In the sequence number example, if the server completes its handshake despite the duplicate sequence number, the requirement is violated and the test case is confirmed.
 
-\section{Summary of Results}
-The technique was applied to four implementations of the DTLS protocol. These included OpenSSL, MbedTLS, and two variants of TinyDTLS. A collection of sixteen requirements from the DTLS RFC~\cite{RFC6347} were formulated and tested. These requirements ranged from record layer constraints, concerning content type, version fields, and epoch handling, to handshake layer rules related to message ordering, fragmentation, and message sequence numbers.
+\section{Evaluation}
+The technique was applied to four implementations of the DTLS protocol. These included OpenSSL, MbedTLS, and two variants of TinyDTLS. 
+A collection of sixteen requirements from the DTLS RFC~\cite{RFC6347} were formulated and tested. These requirements ranged from record layer constraints, concerning content type, version fields, and epoch handling, to handshake layer rules related to message ordering, fragmentation, and message sequence numbers.
 
-The evaluation revealed a total of thirty six unique bugs, seven of which were classified as vulnerabilities. Several issues were memory related, including out of bounds accesses during message reassembly. Others concerned logical violations of the specification, such as incorrect validation of version fields, improper handling of repeated handshake messages, and failures to respect message ordering rules. Many issues were identified within a short symbolic exploration time, and all of them were acknowledged and fixed by the developers.
+The evaluation revealed a total of \emph{thirty six} unique bugs, seven of which were classified as vulnerabilities. Several issues were memory related, including out of bounds accesses during message reassembly. Others concerned logical violations of the specification, such as incorrect validation of version fields, improper handling of repeated handshake messages, and failures to respect message ordering rules. Many issues were identified within a short symbolic exploration time, and all of them were acknowledged and fixed by the developers.
 
 In addition to uncovering new issues, our technique also reproduced a known exploitable vulnerability in OpenSSL's function for reassembling fragmented messages.
 This reproduction confirms the power and promise of our technique.
@@ -127,5 +151,5 @@ In the case of DTLS, this means that SE must reach either the successful complet
 As a result, SE may be forced to explore many paths that lie far beyond the part of the execution that is relevant to the requirement being tested.
 This unnecessarily increases the symbolic search space and can significantly slow down the detection of violating inputs.
 
-These two limitations motivate the need for a technique that avoids direct instrumentation of the implementation and that can detect requirement violations without relying on the completion of a full protocol exchange.
-The next chapter introduces a monitor based approach that addresses both issues by moving requirement checking outside the implementation and by enabling earlier detection of violation points.
+These two limitations motivate the need for a technique that avoids instrumentation of the implementation and that can detect requirement violations without relying on the completion of a full protocol exchange.
+The next chapter introduces a monitor-based approach that addresses both issues by moving requirement checking outside the implementation and by enabling earlier detection of violation points.

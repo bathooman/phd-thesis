@@ -33,3 +33,22 @@
 
 \newcommand{\rfc}[1]{\texttt{#1}}
 \newcommand{\rfcm}[1]{\mathtt{\scriptstyle#1}}
+\newcommand{\var}[1]{\rfc{#1}}
+
+\usepackage{tikz}
+\usetikzlibrary{automata, positioning, arrows}
+\tikzset{
+	state/.style = {circle, draw, minimum size=#1, inner sep=0pt, outer sep=0pt},
+	state/.default = 2.4em, % size of the circle diameter % IEEE: 2em
+	every edge/.append style={font=\footnotesize}, % IEEE: \scriptsize
+	->, % makes the edges directed
+	>=stealth, % makes the arrow heads bold
+	every state/.style={thick, fill=gray!10, minimum size=0pt}, % sets the properties for each ?state? node
+	initial text=$ $, % sets the text that appears on the start arrow
+}
+\newcommand{\edgelabel}[1]{\mathtt{\scriptstyle#1}}
+\newcommand{\ST}[1]{\textsf{\footnotesize #1}}
+
+\newcommand{\eg}{e.\/g., }
+\newcommand{\ie}{i.\/e., }
+\newcommand{\etal}{\mbox{et al.}\xspace}

@@ -1,4 +1,4 @@
-\chapter{Background}\label{sec:background}
+\chapter{Background}\label{chapter:background}
 \section{Traditional Testing Methods}
 Testing has long been a central technique for assessing software correctness.
 Traditional approaches operate by exercising selected program behaviors under representative inputs and observing whether the outputs match the expectations defined by a specification.
@@ -35,7 +35,7 @@ However, constructing accurate models from natural-language specifications is la
 Coverage-guided fuzzers~\cite{AFL, AFLplusplus-Woot20} prioritize inputs that trigger previously unexplored control-flow branches and have proven effective at exposing robustness issues such as crashes and memory-safety violations. 
 Traditional fuzzers treat each input largely in isolation, which makes them less effective for exploring deeper protocol behaviors that depend on long-lived internal state or structured message flows. 
 Recent state-aware fuzzers~\cite{AFLNET@ICST-20, SnapFuzz@ISSTA-22} mitigate this limitation by incorporating message types and simple feedback on server responsiveness, enabling more targeted exploration of protocol state. 
-However, their notion of state remains coarse-grained and heuristic, and they provide limited control over the semantic rules defined in the protocol specification, which reduces their utility for conformance testing.
+However, their notion of state remains coarse-grained and heuristic, and they cannot direct the fuzzer toward exercising or violating specific semantic rules defined in the protocol specification, which reduces their utility for conformance testing.
 
 \emph{Differential testing}~\cite{McKeeman@DiffTesting, RFCcert@ICSE-18, SymCerts, PKCS} provides another automated technique suitable for protocols. 
 By exercising multiple independent implementations with the same inputs and comparing their outputs, it can reveal behavioral differences in how implementations process those inputs. 
@@ -177,7 +177,7 @@ Despite its strengths, SE also faces several well-known limitations.
 Because symbolic execution is a white-box technique, it can only reason about behavior that is executed inside the symbolic interpreter. 
 External services operate outside this scope and return concrete data such as file contents, incoming packets, or timer values that the engine cannot control or fork. 
 For example, a network read depends on the exact bytes delivered by the OS, which cannot be treated symbolically without replacing the socket interface with a model that produces symbolic data. 
-Many SE engines therefore fall back on \emph{concretization}, supplying fixed concrete values for such interactions when no model is available. 
+Some SE engines~\cite{KLEE@OSDI-08} therefore fall back on \emph{concretization}, supplying fixed concrete values for such interactions when no model is available. 
 While this allows execution to proceed, concretization restricts exploration to a single concrete behavior and may cause the engine to miss feasible paths that depend on alternative inputs. 
 Symbolic models avoid this loss of coverage but are difficult to implement comprehensively and can significantly affect scalability.
 
