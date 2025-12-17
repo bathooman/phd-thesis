@@ -1,28 +1,28 @@
 \chapter{Monitor-based Symbolic Execution for Stateful Protocols}\label{chapter:paper2}
-Testing stateful network protocol implementations is complex because the processing of each packet often depends on a potentially long sequence of previous packets.
-As discussed in \Cref{chapter:paper1}, detecting requirement violations with symbolic execution (SE) becomes challenging when checks must be inserted in many locations inside an implementation or when violations surface only after the completion of an entire interaction.
+Testing stateful network protocol implementations is challenging because the processing of each packet often depends on a potentially long sequence of previously exchanged packets.
+As discussed in \Cref{chapter:paper1}, detecting requirement violations using symbolic execution (SE) becomes challenging when checks must be inserted in many locations inside an implementation or when violations surface only after the completion of an entire interaction.
 This chapter introduces a monitor-based SE technique that moves requirement checking outside the system under test (SUT).
 The technique addresses limitations identified in \Cref{chapter:paper1} by enabling early detection of requirement violations and by avoiding intrusive instrumentation of protocol implementations.
 
 The technique combines SE with external monitors.
 A monitor is a software component that executes alongside the SUT, observes the packets exchanged between protocol parties (\eg client and server), and maintains information about the interaction state. 
-Using this information, it can check whether packets sent by the SUT conform to the protocol specification.
+Based on this information, the monitor can check whether packets sent by the SUT conform to the protocol specification.
 Monitors may also designate selected packet fields as symbolic, which allows SE to explore a full range of potentially violating inputs.
 Since monitors run independently of the SUT, the same set of monitors can be reused across different implementations and versions of a protocol.
 This separation of requirement logic from implementation code improves reuse, reduces maintenance effort, and allows the technique to scale across protocol implementations.
 
 The technique consists of several components. 
-We begin by introducing monitors, which form the core of the technique.
+We begin by introducing monitors, which form its core.
 \section{Technique}
 \subsection{Monitors}
-Monitors are the central abstraction in this technique.
-A monitor executes alongside the SUT and observes the packets exchanged between protocol parties.
+Monitors are the central abstraction of the technique.
+A monitor executes alongside the SUT and observes packets exchanged between protocol parties.
 Based on these observations, it maintains its own internal state and checks whether the SUT behaves according to the protocol specification.
 To cover all potentially requirement-violating values in input fields, the monitor may designate selected fields of incoming packets as symbolic.
-A SE engine will then explore all paths that can be reached for any values of these fields, including values that expose requirement violations.
+An SE engine will then explore all execution paths that can be reached for any values of these fields, including values that expose requirement violations.
 In addition, SE will discover memory errors, crashes, and other runtime problems in the SUT.
 A monitor therefore acts as an external component that inspects and manipulates communication while leaving the SUT unmodified.
-When an assertion in the monitor fails, the corresponding SE path is terminated and a violating packet assignment is reported.
+When an assertion in the monitor fails, the corresponding execution path is terminated and a violating packet assignment is reported.
 
 We represent monitors as state machines.
 Each monitor has a control state that indicates where it is in the requirement checking process and may contain a set of auxiliary variables that track the parts of the interaction relevant for the requirement.
@@ -67,7 +67,7 @@ The DTLS specification further prescribes how such invalid records must be handl
 In particular, it states that invalid records should be silently discarded and that implementations which choose to generate an alert must generate a fatal alert~\cite[p.~14]{RFC6347}.
 This requirement can be checked by observing how a server reacts to records with invalid content type values.
 
-Leaving aside the optional conjunct on the \rfc{epoch} field, shown in olive, the monitor proceeds as follows.
+Leaving aside the optional conjunct on the \rfc{epoch} field, shown in olive, the monitor operates as follows.
 In the initial state \ST{Init}, it passively observes client-generated records and may nondeterministically select one of them to invalidate by making its \rfc{content\_type} field symbolic and constraining it to differ from its original value.
 This nondeterministic choice allows SE to explore violations introduced at arbitrary points in the interaction, effectively checking the requirement for all client-generated records. 
 When such an invalidation is introduced, the monitor transitions to the state \ST{Rcvd}.
@@ -99,17 +99,20 @@ Each party takes turns processing the packets available to it, and the harness a
 \subsection{Encoding Monitors as Programs}\label{sec:monitorencoding}
 Monitors are represented as state machines, similar to the one shown in \Cref{fig:monitor:dtls:content-type}, but to be usable during SE they must be encoded as executable programs.
 Each monitor is therefore translated into a small program that maintains its control state, stores auxiliary variables, and evaluates transitions whenever a packet is delivered.
-Since we use KLEE as the SE engine one is constrained to use a programming language that can be compiled to LLVM bitcode. 
+Since we use KLEE as the SE engine, we are constrained to use a programming language that can be compiled to LLVM bitcode.
 In our implementation, monitors are written in C.
 
 The programmatic representation of a monitor preserves the structure of the underlying state machine. 
 The control state is implemented as an enumeration, and the monitor keeps a data structure that holds this state along with any local variables it needs.
-Each transition is implemented as a conditional block that checks whether its guard is satisfied by the currently observed packet. If the guard holds, the corresponding action is executed. 
+Each transition is implemented as a conditional block that checks whether its guard is satisfied by the currently observed packet. 
+If the guard holds, the corresponding action is executed. 
 Actions may update auxiliary variables, introduce symbolic values, add assumptions, or check assertions.
 
-Whenever the state machine contains a nondeterministic choice between multiple outgoing transitions, the translation introduces a symbolic variable that ranges over the available alternatives. When this symbolic value is evaluated, KLEE forks execution, allowing the SE engine to explore each possible outcome of the nondeterministic choice.
+Whenever the state machine contains a nondeterministic choice between multiple outgoing transitions, the translation introduces a symbolic variable that ranges over the available alternatives. 
+When this symbolic value is evaluated, KLEE forks execution, allowing the SE engine to explore each possible outcome of the nondeterministic choice.
 
-If no transition is applicable, the monitor takes no action and the interaction simply progresses. In this case, SE continues without imposing additional constraints on the packet or the SUT.
+If no transition is applicable, the monitor takes no action and the interaction proceeds. 
+In this case, SE continues without imposing additional constraints on the packet or the SUT.
 
 \subsection{Invoking Monitors}
 Once a monitor has been encoded as an executable program, it must be invoked at the appropriate points during SE.
