@@ -1,9 +1,247 @@
-\chapter{Monitor-based Symbolic Execution for Stateful Protocols}\label{sec:paper2}
+\chapter{Monitor-based Symbolic Execution for Stateful Protocols}\label{chapter:paper2}
+Testing stateful network protocol implementations is complex because the processing of each packet often depends on a potentially long sequence of previous packets.
+As discussed in \Cref{chapter:paper1}, detecting requirement violations with symbolic execution (SE) becomes challenging when checks must be inserted in many locations inside an implementation or when violations surface only after the completion of an entire interaction.
+This chapter introduces a monitor-based SE technique that moves requirement checking outside the system under test (SUT).
+The technique addresses limitations identified in \Cref{chapter:paper1} by enabling early detection of requirement violations and by avoiding intrusive instrumentation of protocol implementations.
+
+The technique combines SE with external monitors.
+A monitor is a software component that executes alongside the SUT, observes the packets exchanged between protocol parties (\eg client and server), and maintains information about the interaction state. 
+Using this information, it can check whether packets sent by the SUT conform to the protocol specification.
+Monitors may also designate selected packet fields as symbolic, which allows SE to explore a full range of potentially violating inputs.
+Since monitors run independently of the SUT, the same set of monitors can be reused across different implementations and versions of a protocol.
+This separation of requirement logic from implementation code improves reuse, reduces maintenance effort, and allows the technique to scale across protocol implementations.
+
+The technique consists of several components. 
+We begin by introducing monitors, which form the core of the technique.
 \section{Technique}
+\subsection{Monitors}
+Monitors are the central abstraction in this technique.
+A monitor executes alongside the SUT and observes the packets exchanged between protocol parties.
+Based on these observations, it maintains its own internal state and checks whether the SUT behaves according to the protocol specification.
+To cover all potentially requirement-violating values in input fields, the monitor may designate selected fields of incoming packets as symbolic.
+A SE engine will then explore all paths that can be reached for any values of these fields, including values that expose requirement violations.
+In addition, SE will discover memory errors, crashes, and other runtime problems in the SUT.
+A monitor therefore acts as an external component that inspects and manipulates communication while leaving the SUT unmodified.
+When an assertion in the monitor fails, the corresponding SE path is terminated and a violating packet assignment is reported.
+
+We represent monitors as state machines.
+Each monitor has a control state that indicates where it is in the requirement checking process and may contain a set of auxiliary variables that track the parts of the interaction relevant for the requirement.
+In this representation, each transition is written with a condition above a horizontal bar and an action below it.
+The condition specifies when the transition applies and is expressed in terms of the currently observed packet~$\rfc{P}$.
+When the condition holds, the monitor performs the transition and executes the statement below the bar.
+These statements may update auxiliary variables, introduce symbolic values for selected packet fields, restrict these values using assumptions, or check requirements using assertions.
+
+\begin{figure}[h]
+	\centering
+	\resizebox{\columnwidth}{!}{
+		\begin{tikzpicture}[node distance=4.8cm]
+			\node[state, initial, xshift=-.1cm] (c1) {\ST{Init}};
+			\node[state, right of=c1] (c2) {\ST{Rcvd}};
+			\node[state, right of=c2, xshift=-0.8cm] (c3) {\ST{End}};    
+			
+			\draw	
+			(c1) edge[loop above, min distance=2em, font=\scriptsize] node{$\frac{
+					\edgelabel{P.source\, =\, Client\,}}{}$} (c1)
+			(c1) edge node[above, font=\scriptsize]{$
+				\frac{
+					\edgelabel{P.source\, =\, Client\, \OPT{\land\, P.epoch\, =\, 0}}}{
+					\begin{aligned}
+						&\edgelabel{content\_type\, \coloneqq\, P.content\_type;}\\[-0.6em]
+						&\edgelabel{make\_symbolic(\&P.content\_type);}\\[-0.6em]
+						&\edgelabel{assume(P.content\_type\, \neq\, content\_type)}\\[-0.4em]
+				\end{aligned}}$} (c2)
+			(c2) edge[bend left=20, font=\scriptsize] node[above]{$\frac{\edgelabel{P.source\, =\, Server}}{\edgelabel{assert(P.content\_type\, =\, alert)}}$} (c3)
+			(c2) edge[bend right=20, font=\scriptsize] node[below]{$\frac{\edgelabel{P.source\, =\, Client}}{}$} (c3);
+		\end{tikzpicture}
+	}
+	\caption{Monitor for the Matching Content Type requirement of DTLS.}
+	\label{fig:monitor:dtls:content-type}
+\end{figure}
+
+The monitor in \Cref{fig:monitor:dtls:content-type} checks that the DTLS server correctly handles records whose content type does not match the enclosed fragment.
+
+According to the TLS specification~\cite[p.~19]{RFC5246}, the content type field in the record layer determines the higher-level protocol used to process the enclosed fragment.
+The content type field is defined as a one-byte value drawn from a fixed set, one of which corresponds to \emph{alert}.
+A mismatch between the content type and the enclosed fragment therefore renders a record invalid.
+The DTLS specification further prescribes how such invalid records must be handled.
+In particular, it states that invalid records should be silently discarded and that implementations which choose to generate an alert must generate a fatal alert~\cite[p.~14]{RFC6347}.
+This requirement can be checked by observing how a server reacts to records with invalid content type values.
+
+Leaving aside the optional conjunct on the \rfc{epoch} field, shown in olive, the monitor proceeds as follows.
+In the initial state \ST{Init}, it passively observes client-generated records and may nondeterministically select one of them to invalidate by making its \rfc{content\_type} field symbolic and constraining it to differ from its original value.
+This nondeterministic choice allows SE to explore violations introduced at arbitrary points in the interaction, effectively checking the requirement for all client-generated records. 
+When such an invalidation is introduced, the monitor transitions to the state \ST{Rcvd}.
+
+Once in state \ST{Rcvd}, the monitor waits for the next packet sent by the server.
+If the server responds by generating an \emph{Alert}, the requirement is satisfied and the monitor transitions to the terminal state \ST{End}.
+If the server instead continues processing the invalid record and produces a packet with a different content type, the assertion on the corresponding transition fails and the violation is reported.
+If a client packet is observed while in state \ST{Rcvd}, the monitor also transitions to \ST{End}, reflecting the case where the server silently discards the invalid record.
+The terminal state \ST{End} ensures that the monitor performs a single check per execution path and avoids repeated invalidations within the same interaction.
+ 
+The additional guard (\rfc{P.epoch = 0}) restricts this manipulation to records that are not yet protected by encryption.
+In DTLS, records with epoch zero carry plaintext fragments, whereas records with nonzero epoch values contain encrypted payloads.
+Although the content type field itself is not encrypted, it influences subsequent cryptographic processing when the epoch is nonzero.
+Restricting symbolic manipulation to records whose epoch is zero therefore avoids requiring SE to reason about expensive cryptographic operations.
+
+Although the example in this section focuses on DTLS, we applied the same monitor-based technique to QUIC by encoding requirements over packet headers, frames, and connection state.
+
 \subsection{Creating a Test Harness}
-\subsection{Encoding Monitors as Programs}
+The technique requires a test harness that executes the protocol parties and invokes a monitor whenever a packet is received by one of them.
+The harness is executed symbolically by the SE engine and is designed as a uniform component that can be equipped with any arbitrary monitor.
+It is independent of the particular requirement being tested.
+The extent of the protocol interaction that the harness performs depends on the monitor: it may involve only a simple message exchange in stateless protocols, or it may require the parties to complete a full handshake and exchange application data.
+Whenever one protocol party sends a packet, the harness makes this packet available to the receiving party and invokes the monitor on a structured representation of the packet before the SUT processes it.
+In this way, the monitor can inspect the packet, introduce symbolic values, or impose additional assumptions before the SUT observes the input.
+
+When using KLEE as the SE engine, the harness must consolidate all involved protocol parties into a single-threaded process and coordinate their interactions explicitly.
+Each party takes turns processing the packets available to it, and the harness advances the protocol interaction by alternating between parties until the interaction terminates or a monitor assertion fails.
+
+\subsection{Encoding Monitors as Programs}\label{sec:monitorencoding}
+Monitors are represented as state machines, similar to the one shown in \Cref{fig:monitor:dtls:content-type}, but to be usable during SE they must be encoded as executable programs.
+Each monitor is therefore translated into a small program that maintains its control state, stores auxiliary variables, and evaluates transitions whenever a packet is delivered.
+Since we use KLEE as the SE engine one is constrained to use a programming language that can be compiled to LLVM bitcode. 
+In our implementation, monitors are written in C.
+
+The programmatic representation of a monitor preserves the structure of the underlying state machine. 
+The control state is implemented as an enumeration, and the monitor keeps a data structure that holds this state along with any local variables it needs.
+Each transition is implemented as a conditional block that checks whether its guard is satisfied by the currently observed packet. If the guard holds, the corresponding action is executed. 
+Actions may update auxiliary variables, introduce symbolic values, add assumptions, or check assertions.
+
+Whenever the state machine contains a nondeterministic choice between multiple outgoing transitions, the translation introduces a symbolic variable that ranges over the available alternatives. When this symbolic value is evaluated, KLEE forks execution, allowing the SE engine to explore each possible outcome of the nondeterministic choice.
+
+If no transition is applicable, the monitor takes no action and the interaction simply progresses. In this case, SE continues without imposing additional constraints on the packet or the SUT.
+
 \subsection{Invoking Monitors}
+Once a monitor has been encoded as an executable program, it must be invoked at the appropriate points during SE.
+The test harness orchestrates the protocol interaction and ensures that every packet delivered from one protocol party to another is first presented to the monitor.
+In practice, this is realized by implementing the monitor as a callback function that is invoked just before the packet is delivered to the protocol party.
+The callback receives a structured representation of the packet as its parameter.
+
+Monitor invocation is synchronous: the SUT does not observe a packet until the monitor has completed its evaluation.
+This ordering is essential, because the monitor may introduce symbolic values, apply assumptions, or raise assertions that influence how SE proceeds.
+If a transition introduces symbolic values or assumptions, the SE engine forks execution to explore the resulting paths.
+If an assertion fails, the SE engine terminates that path and reports the violating packet assignment.
+
+As a consequence of this online invocation model, packets do not need to be pre-captured or replayed from execution traces.
+Monitors are executed directly on packets as they flow between protocol parties, eliminating the need for a separate trace collection and replay infrastructure.
+This design also simplifies testing across different protocol or implementation configurations, as changes to configuration parameters do not require regenerating or adapting traces.
+
 \subsection{Developing Protocol-specific Infrastructure}
+Monitors check requirements over protocol fields such as content type, sequence number, and epoch.
+To facilitate this, the technique advocates developing protocol-specific infrastructure that exposes packet contents in a structured form suitable for inspection and manipulation by monitors.
+Conceptually, this infrastructure translates packets between their wire format and an internal representation before and after monitor execution.
+
 \subsection{Applying Small Modifications to the SUT}
-\section{Summary of Results}
+For some SUTs, it is beneficial to apply small changes that simplify the application of SE. 
+When a protocol transmits packets in encrypted form, disabling encryption can simplify the analysis. 
+This avoids the cost of performing encryption and decryption and prevents the symbolic executor from having to reason about cryptographic operations. 
+A similar consideration applies to timing-related behavior. 
+Many protocol implementations 
+trigger retransmissions or abort the interaction if no response is received within a certain time window. To prevent such behavior from interfering with symbolic exploration, the timeout can be set to its maximum value or disabled entirely.
+
+\section{Implementation}
+This section describes how the monitor-based SE technique introduced above is realized in practice.
+
+\subsection{Generic Infrastructure}
+Many protocols exchange packets over POSIX sockets using an API provided by an operating system library~\cite{unix-network}.
+Our generic infrastructure provides a custom implementation of these APIs that acts as a proxy and redirects communication between the SUT and its peers.
+More concretely, functions that send packets, such as \texttt{sendto}, are replaced by functions that place the packet into a shared queue.
+Similarly, functions that receive packets, such as \texttt{recvfrom}, are replaced by functions that remove the first packet from the queue and invoke the monitor before returning the packet to the caller.
+
+Processing an incoming packet follows three steps. 
+First, the packet at the head of the queue is parsed using protocol-specific infrastructure and stored in a structured packet object~\rfc{P}. 
+Second, the monitor is invoked with \rfc{P} as input. 
+Third, after the monitor completes its evaluation, the packet, whose fields may have been manipulated, is serialized back into its wire format and returned to the SUT.
+
+A separate packet queue is maintained for each direction of communication between protocol parties, for example from client to server and from server to client. 
+The \texttt{bind} function is redirected to an initialization function that creates the packet queues. 
+All other library functions remain unchanged.
+
+\subsection{Protocol-specific Infrastructure}
+Our implementation consists of the following protocol-specific components.
+\paragraph{Set of Monitors}
+Monitors are encoded as C functions using the translation described in \Cref{sec:monitorencoding}.
+Each function takes as parameter a pointer to the data structure that represents the currently observed protocol packet, and accesses packet fields by selecting the corresponding fields in this structure.
+
+\Cref{fig:implementation:monitor} shows the C implementation of the monitor for the Matching Content Type DTLS requirement for servers (shown in \Cref{fig:monitor:dtls:content-type}).
+The code closely follows the structure of the abstract state machine.
+It first declares an enumeration that encodes the monitor's control states and a static variable that stores the current state.
+The body of the monitor function consists of a sequence of conditional blocks, each corresponding to a transition of the abstract state machine.
+Within each block, the guard of the transition is evaluated over the fields of the current packet, and, if the guard holds, the associated actions are executed before the monitor moves to the target state.
+
+\begin{figure}[h]
+	\begin{lstlisting}[language=C, numbers=left, xleftmargin=1em, frame=single,
+		numberstyle=\tiny\color{blue}, showstringspaces=false,
+		escapeinside={//(*@}{@*)}]
+enum STATE { INIT, RCVD, END };  //(*@\label{ln:STATE}@*)
+
+static STATE curr_state = INIT;  //(*@\label{ln:curr_state}@*)
+
+void matching_content_type_server(RECORD *P) {
+	if (curr_state == INIT && P.source == CLIENT &&
+			byte_to_int(P->epoch, sizeof(P->epoch)) == 0) { //(*@\label{ln:epoch_check}@*)
+		uint8_t content_type = P->content_type;
+		
+		kleener_make_symbolic(&P->content_type,
+			sizeof(P->content_type), "content-type");
+		klee_assume(P->content_type != content_type);
+		curr_state = RCVD;
+	}
+	else if (curr_state == RCVD && P.source == SERVER) {
+		if (P->content_type != Alert_REC)
+			assert(0 && "Mismatching Content Type");
+		curr_state = END;
+	}
+	else if (curr_state == RCVD && P.source == CLIENT)
+		curr_state = END;
+	else if (curr_state == END) return;
+}
+	\end{lstlisting}
+	%\vspace*{-1em}
+	\caption{The C implementation of the monitor of~\Cref{fig:monitor:dtls:content-type}.}
+	% (the Matching Content Type DTLS requirement for servers).}
+\label{fig:implementation:monitor}
+\end{figure}
+
+The only difference from the abstract representation is the self-loop transition in the initial state that is handled by an infrastructure that supports nondeterminism between two transitions.
+To this end, each packet processed during an interaction is assigned an index, and a symbolic variable ranging over possible packet indices is introduced.
+A non-self-loop transition is taken only if its guard holds and the index of the current packet matches the symbolic index; otherwise, the self-loop is taken.
+Since the index is symbolic, the symbolic execution engine explores executions in which the monitor remains in a given control state for an arbitrary number of packets before taking the transition.
+
+\paragraph{Parser and Serializer}
+Packets exchanged by protocol implementations are typically represented as byte arrays. To simplify the development of monitors, we provide a protocol-specific parser that translates received packets into structured data objects before invoking the monitor. This allows monitors to inspect and manipulate individual packet fields directly. After the monitor has completed its execution, a serializer converts the possibly modified data structure back into its wire format before it is delivered to the receiving protocol party. These parser and serializer components are optional, but they significantly reduce the complexity of monitor implementations by avoiding the need to manipulate raw byte offsets within packet buffers.
+
+In some cases, small SUT-specific adjustments are applied to simplify SE, such as disabling encryption or extending timeout values.
+These changes are not required for correctness, but they reduce analysis complexity and avoid symbolic reasoning over cryptographic operations or timing-related behavior.
+
+\section{Evaluation}
+The technique was evaluated on multiple stateful network protocol implementations, focusing primarily on DTLS and QUIC.
+The evaluation considered both client-side and server-side implementations and covered requirements drawn directly from the corresponding RFC specifications~\cite{RFC6347, RFC5246, RFC9000}.
+These requirements included protocol-specific constraints at the packet and record level, such as content type handling and epoch processing in DTLS, as well as QUIC-specific checks related to frame validity, packet number handling, and error signaling, in addition to higher-level protocol rules such as message ordering and error handling.
+
+The results demonstrate that the monitor-based technique is effective at detecting both logical specification violations and low-level implementation errors.
+Across the evaluated implementations, the technique uncovered \emph{twenty two} previously unknown bugs, including incorrect handling of malformed records, missing validation checks, and improper reactions to protocol violations.
+Notably, all issues previously identified using the technique presented in \Cref{chapter:paper1} were rediscovered considerably faster and with substantially less manual effort.
+This improvement is primarily due to the fact that requirement checking is performed externally by monitors and can be triggered as soon as a violating packet is observed.
+As a result, violations can be detected without requiring the protocol handshake to complete.
+
+Overall, the evaluation indicates that the monitor-based symbolic execution technique presented in this chapter provides a practical and efficient means of testing stateful protocol implementations for conformance to their specifications.
+For a detailed description of the DTLS and QUIC requirements and their monitors, the experimental setup, and the complete set of discovered issues, the reader is referred to \textcolor{red}{Paper~2}, included later in this thesis.
+
 \section{Limitations}
+The effectiveness of the monitor-based SE technique fundamentally depends on the quality and completeness of the specification-based oracle encoded by the monitors.
+Each monitor represents a manually extracted requirement from the protocol specification, and violations can only be detected for those behaviors that are explicitly captured by such monitors.
+Consequently, any requirement that is omitted, misunderstood, or encoded imprecisely will not be checked during SE.
+
+This limitation is particularly challenging for complex network protocols such as DTLS and QUIC, whose specifications are lengthy, intricate, and in some cases ambiguous.
+Manually identifying and encoding all relevant requirements and corner cases as executable monitors is labor-intensive and error-prone.
+Even when SE is used to explore a wide range of inputs, the analysis remains inherently incomplete, as it is constrained by the coverage of the specification-based oracle.
+Bugs that manifest in behaviors not explicitly encoded by the oracle may therefore remain undetected.
+
+Moreover, some protocol behaviors are not governed by strict, explicitly stated rules, but instead arise from underspecified or loosely defined parts of the standard.
+In these cases, different implementations may legitimately make different design choices while still remaining compliant with the specification. 
+Because specification-based monitors encode a single concrete interpretation of the standard, they are less effective at detecting such differences. 
+Behaviors that diverge across implementations but do not violate any explicit requirement will therefore go unnoticed.
+
+These limitations highlight that, while monitor-based SE is effective for detecting violations of explicitly stated requirements, it does not address the fundamental incompleteness of specification-based oracles.
+This motivates the need for complementary approaches that can uncover protocol nonconformances without relying on fully specified oracles.
