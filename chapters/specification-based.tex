@@ -14,10 +14,15 @@ The aim is to systematically search for inputs that violate specific RFC require
 The objective is not limited to detecting crashes. 
 It also focuses on revealing non-conformance flaws that may affect security or interoperability.
 \section{Technique}
-\subsection{Extracting Specification Requirements}
+\subsection{Extracting Specification Requirements}\label{sec:extract-req}
 The first step is to extract protocol requirements from the RFC text and express them as logical predicates over the packets exchanged during a protocol session.
 RFCs typically use particular keywords such as "MUST", "MUST NOT", "REQUIRED", "SHALL", and "SHALL NOT" to indicate the strictness of a requirement~\cite{RFC2119}.
 These statements can be formulated into predicates that describe how packets must be structured and how they relate to one another.
+
+Protocol specifications contain requirements of different kinds.
+Some requirements constrain the validity of individual packets or sequences of packets, specifying conditions under which inputs must be rejected.
+Other requirements relate received inputs to the outputs that an implementation is expected to generate in response, for example by constraining fields in outgoing messages based on earlier inputs in the protocol session.
+In both cases, requirements often involve relationships across multiple packets and cannot be expressed as predicates over a single message in isolation.
 
 To express such predicates precisely, we adopt a simple model of interaction.
 A DTLS session is viewed as a finite sequence of records received by one protocol party; we denote this sequence by $R$.
@@ -26,7 +31,27 @@ Equality between records refers to their position in the sequence: $r = r'$ mean
 Each record is a structured object containing fields such as \rfc{type}, \rfc{epoch}, and \rfc{sequence\_number}.
 For example, $r\rfcm{.sequence\_number}$ is used to refer to the sequence number of a record $r$.
 
-A simple yet representative example appears in the DTLS RFC~\cite[p. 13]{RFC6347}, which specifies the uniqueness of record sequence numbers within a session.
+As an example of an input-output requirement, consider the following rule from the
+DTLS RFC~\cite[p.~17]{RFC6347} and its errata (ID: 5186), which concerns the handling
+of message sequence numbers during cookie exchanges:
+%
+\rfcdisplayquote{%
+In order to avoid sequence number duplication in case of multiple cookie exchanges, the server MUST use the message\_seq in the ClientHello as the message\_seq in its initial ServerHello.}%
+%
+Letting $\mathit{resp}(r,i)$ denote the $i$th output record generated in response to an input record $r$, this requirement can be expressed as:
+%
+\begin{equation}\label{const:msnsame}\normalsize
+	\begin{split}
+		& \scriptstyle \forall r \in R :\ r\rfcm{.msg\_type}\, =\, \rfcm{client\_hello} \implies \\[-5pt]
+		& \scriptstyle \qquad\qquad (\responseto{r}{1}\rfcm{.msg\_type}\, =\, \rfcm{server\_hello} \implies \\[-5pt]
+		& \scriptstyle \qquad\qquad\quad  \responseto{r}{1}\rfcm{.message\_seq}\, =\, r\rfcm{.message\_seq})
+	\end{split}
+\end{equation}
+%
+This predicate captures a dependency between an incoming record and a subsequent outgoing record and illustrates how input-output relationships specified in the RFC can be formalized.
+This formulation relies on the fact that the \rfc{msg\_type} field of a record indicates the type of the enclosed (and possibly fragmented) handshake message.
+
+A simple yet representative example of an input-validity requirement appears in the DTLS RFC~\cite[p. 13]{RFC6347}, which specifies the uniqueness of record sequence numbers within a session.
 Each DTLS record contains a 48-bit \rfc{sequence\_number} field that uniquely identifies the record within a session.
 This field is incremented for every record sent, usually starting from zero. 
 The receiver uses sequence numbers to process records in the correct order and to detect duplicates, since any two records with the same \rfc{sequence\_number} indicate a replay.
@@ -44,9 +69,10 @@ For a set of records $R$ received during a DTLS session, the requirement can be 
 \end{equation}
 %
 This formula captures the essential rule that no two records may share the same sequence number.
-Requirements of this kind, which relate fields across multiple packets, appear frequently in network protocol specifications.
+We will use this requirement as a running example in the remainder of this chapter
+to illustrate how formalized requirements are tested using SE.
 
-Another example of a requirement that relates multiple records concerns the DTLS epoch field.
+Another example of an input-validity requirement that relates multiple records concerns the DTLS epoch field.
 The epoch identifies which set of session keys were used to protect a record, and the RFC specifies that its value should be initialized with zero and increase exactly when a \emph{ChangeCipherSpec} is received~\cite[p. 8]{RFC6347}.
 Let $r_i$ denote the $i$th record in the sequence.
 For $n$ received records in a DTLS session, we capture this requirement with the following formula:
@@ -68,6 +94,7 @@ RFC text is written in natural language and often describes relationships across
 Writing these requirements as predicates makes their meaning precise and exposes exactly which fields participate in them.
 This precision is necessary because SE must focus on the fields that matter for the requirement and explore the conditions under which the requirement may be violated.
 In short, the logical formulation defines the requirement in a clear and unambiguous way, and this definition is what guides the later testing steps.
+
 \subsection{Symbolic Execution}
 Symbolic execution is applied to each tested implementation through a dedicated test harness that replays a pre-captured sequence of records from a valid DTLS handshake and passes them one at a time to the implementation under test.
 Each record is parsed into a structured representation, which enables SE to access and manipulate selected fields. 
@@ -82,7 +109,7 @@ A full DTLS handshake contains many fields that are irrelevant for a given requi
 By replaying a fixed valid sequence and making symbolic only the fields involved in the requirement, we restrict SE to the part of the input space where a violation may occur.
 Parsing records into structured representations further supports this goal by allowing the analysis to target individual protocol fields rather than byte arrays.
 
-The requirements we consider fall into two classes. 
+The requirements introduced in the previous section fall into two classes.
 The first class consists of input-validity requirements, which specify conditions that each received record must satisfy. 
 These requirements describe how the implementation should reject malformed inputs. 
 When checking an input-validity requirement, SE makes the relevant fields symbolic and introduces assumptions that correspond to the negation of the requirement.
@@ -107,7 +134,7 @@ All other fields remain concrete.
 
 An assume statement is then introduced that indicates that at least two symbolic sequence numbers are equal.
 This directs SE to explore precisely those assignments that violate uniqueness.
-To evaluate the effect of this invalid input, a failing assertion is placed at the code location that indicates successful completion of the handshake. 
+To evaluate the effect of this invalid input, a failing assertion (\eg \texttt{assert(false)}) is placed at the code location that indicates successful completion of the handshake. 
 If SE reaches this assertion, it means that the implementation completed the handshake even though it received a record with a duplicate sequence number. 
 The assertion then fails, and the SE engine reports the concrete assignments that triggered this behavior.
 
@@ -139,7 +166,8 @@ In addition to uncovering new issues, our technique also reproduced a known expl
 This reproduction confirms the power and promise of our technique.
 
 For a detailed description of the technique's implementation, the full set of input-validity and input-output requirements we evaluated, and a comprehensive analysis of the issues we discovered, the reader is referred to \textcolor{red}{Paper 1} included later in this thesis.
-\section{Limitations}
+
+\section{Limitations}\label{sec:paper1-limitations}
 The technique presented in this chapter has two main limitations that motivate the next contribution of this thesis.
 The first limitation is that the code responsible for checking requirements must be directly inserted into the source code of the implementation under test.
 This involves adding calls to a shared library at specific locations in the implementation.

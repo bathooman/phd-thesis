@@ -2,13 +2,13 @@
 Testing stateful network protocol implementations is challenging because the processing of each packet often depends on a potentially long sequence of previously exchanged packets.
 As discussed in \Cref{chapter:paper1}, detecting requirement violations using symbolic execution (SE) becomes challenging when checks must be inserted in many locations inside an implementation or when violations surface only after the completion of an entire interaction.
 This chapter introduces a monitor-based SE technique that moves requirement checking outside the system under test (SUT).
-The technique addresses limitations identified in \Cref{chapter:paper1} by enabling early detection of requirement violations and by avoiding intrusive instrumentation of protocol implementations.
+The technique addresses limitations identified in \Cref{sec:paper1-limitations} by enabling early detection of requirement violations and by avoiding intrusive instrumentation of protocol implementations.
 
 The technique combines SE with external monitors.
-A monitor is a software component that executes alongside the SUT, observes the packets exchanged between protocol parties (\eg client and server), and maintains information about the interaction state. 
+A monitor is a software component that is invoked at specific points during protocol interaction as packets are delivered, observes the packets exchanged between protocol parties (\eg client and server), and maintains information about the interaction state.
 Based on this information, the monitor can check whether packets sent by the SUT conform to the protocol specification.
 Monitors may also designate selected packet fields as symbolic, which allows SE to explore a full range of potentially violating inputs.
-Since monitors run independently of the SUT, the same set of monitors can be reused across different implementations and versions of a protocol.
+Since monitors are separated from the SUT, and depend only on the protocol (and not a specific implementation), the same set of monitors can be reused across different implementations and versions of a protocol.
 This separation of requirement logic from implementation code improves reuse, reduces maintenance effort, and allows the technique to scale across protocol implementations.
 
 The technique consists of several components. 
@@ -16,7 +16,7 @@ We begin by introducing monitors, which form its core.
 \section{Technique}
 \subsection{Monitors}
 Monitors are the central abstraction of the technique.
-A monitor executes alongside the SUT and observes packets exchanged between protocol parties.
+A monitor is synchronously invoked during protocol interaction to observe packets exchanged between protocol parties.
 Based on these observations, it maintains its own internal state and checks whether the SUT behaves according to the protocol specification.
 To cover all potentially requirement-violating values in input fields, the monitor may designate selected fields of incoming packets as symbolic.
 An SE engine will then explore all execution paths that can be reached for any values of these fields, including values that expose requirement violations.
@@ -67,7 +67,7 @@ The DTLS specification further prescribes how such invalid records must be handl
 In particular, it states that invalid records should be silently discarded and that implementations which choose to generate an alert must generate a fatal alert~\cite[p.~14]{RFC6347}.
 This requirement can be checked by observing how a server reacts to records with invalid content type values.
 
-Leaving aside the optional conjunct on the \rfc{epoch} field, shown in olive, the monitor operates as follows.
+Leaving aside the optional conjunct on the \rfc{epoch} field, shown in red, the monitor operates as follows.
 In the initial state \ST{Init}, it passively observes client-generated records and may nondeterministically select one of them to invalidate by making its \rfc{content\_type} field symbolic and constraining it to differ from its original value.
 This nondeterministic choice allows SE to explore violations introduced at arbitrary points in the interaction, effectively checking the requirement for all client-generated records. 
 When such an invalidation is introduced, the monitor transitions to the state \ST{Rcvd}.
@@ -241,10 +241,11 @@ Manually identifying and encoding all relevant requirements and corner cases as 
 Even when SE is used to explore a wide range of inputs, the analysis remains inherently incomplete, as it is constrained by the coverage of the specification-based oracle.
 Bugs that manifest in behaviors not explicitly encoded by the oracle may therefore remain undetected.
 
-Moreover, some protocol behaviors are not governed by strict, explicitly stated rules, but instead arise from underspecified or loosely defined parts of the standard.
+Moreover, some protocol behaviors are not governed by strict, explicitly stated rules, but instead arise from underspecified parts of the standard.
 In these cases, different implementations may legitimately make different design choices while still remaining compliant with the specification. 
-Because specification-based monitors encode a single concrete interpretation of the standard, they are less effective at detecting such differences. 
-Behaviors that diverge across implementations but do not violate any explicit requirement will therefore go unnoticed.
+Although specification-based monitors can be written to allow for multiple compliant behaviors, accurately capturing the full space of behaviors permitted by a protocol specification is often difficult.
+RFCs frequently contain such underspecified aspects, and the set of behaviors that are considered compliant may not be precisely characterized.
+As a result, constructing monitors that faithfully reflect all allowed behaviors can be challenging, and some compliant but divergent implementation behaviors may not be detected.
 
 These limitations highlight that, while monitor-based SE is effective for detecting violations of explicitly stated requirements, it does not address the fundamental incompleteness of specification-based oracles.
 This motivates the need for complementary approaches that can uncover protocol nonconformances without relying on fully specified oracles.
