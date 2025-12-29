@@ -1,1 +1,414 @@
-\chapter{Beyond Oracles: Differential Symbolic Execution}\label{sec:paper3}
+\chapter{Beyond Oracles: Differential Symbolic Execution}\label{chapter:paper3}
+The techniques presented in the previous chapters rely on the existence of an explicit oracle that characterizes correct protocol behavior.
+In \Cref{chapter:paper1}, correctness is defined through logical predicates extracted from protocol specifications and checked by instrumenting the implementation under test.
+In \Cref{chapter:paper2}, this notion is preserved, but the responsibility for checking requirements is moved outside the implementation and delegated to external monitors.
+In both cases, symbolic execution (SE) is guided by a specification-based oracle that encodes how an implementation is expected to behave.
+
+As discussed in \Cref{sec:paper2-limitations}, the effectiveness of specification-based oracles fundamentally depends on the completeness and precision of the requirements extracted from the protocol specification.
+Violations can only be detected for behaviors that are explicitly captured by monitors, and any requirement that is omitted, misunderstood, or encoded imprecisely remains unchecked.
+This dependence is particularly challenging for complex protocols such as DTLS and QUIC, whose specifications are lengthy, intricate, and in some cases ambiguous.
+Even when SE explores a wide range of inputs, the analysis remains inherently incomplete, as it is constrained by the coverage of the encoded oracle.
+
+In addition, not all protocol behaviors are governed by strict, explicitly stated rules.
+Many aspects of protocol behavior arise from underspecified parts of the specification, where multiple implementation choices may be considered compliant.
+Accurately capturing the full space of such permitted behaviors in the form of executable monitors is often difficult.
+As a result, implementations may exhibit divergent behaviors that do not violate any explicitly stated requirement and therefore remain undetected by specification-based checking, even though such discrepancies may indicate subtle inconsistencies, corner cases, or potential interoperability issues.
+
+This chapter considers protocol testing scenarios that arise precisely in the presence of such incomplete or underspecified oracles.
+Rather than checking an implementation against an explicit set of specification-derived requirements, we adopt a comparative perspective and analyze how multiple implementations behave when exposed to the same inputs.
+The underlying assumption is that independently developed implementations of the same protocol are expected to exhibit equivalent externally observable behavior when processing identical packet sequences.
+Deviations from this common behavior may indicate implementation errors, inconsistent interpretations of the specification, or behaviors that are not explicitly characterized by the specification.
+
+To explore such discrepancies systematically, this chapter introduces a differential SE technique for network protocol implementations.
+The technique symbolically executes multiple implementations side by side on shared symbolic packet inputs and observes their externally visible behavior.
+When SE produces execution paths whose responses differ across implementations for a common input, the subsequent analysis reports a behavioral discrepancy and extracts the concrete packet values that induce it.
+At this stage, no judgment is made about which behavior is correct.
+The resulting packet sequences are instead used as test cases whose effects are analyzed with reference to the protocol specification to determine whether the discrepancy corresponds to a violation, an underspecified behavior, or a permissible implementation choice.
+
+The differential technique builds directly on the monitor-based infrastructure introduced in \Cref{chapter:paper2}.
+The same test harness, packet parsing infrastructure, and SE setup are reused.
+The key difference lies in how observations are interpreted.
+Monitors are no longer used to enforce specification requirements, but instead to observe packet exchanges and record execution outcomes that are later analyzed to identify behavioral discrepancies across implementations.
+This reuse allows differential SE to be integrated into the existing framework while addressing classes of protocol behaviors that are difficult to capture using specification-based oracles alone.
+\section{Technique}
+\subsection{Creating a Test Harness}
+Differential SE is performed within a test harness that orchestrates a predefined interaction between a protocol implementation under test and another protocol party.
+As in the monitor-based technique, the purpose of the test harness is to provide a controlled and deterministic execution environment.
+In the differential setting, the harness additionally ensures that multiple implementations are exposed to equivalent inputs.
+
+For each system under test (SUT), a separate test harness is constructed.
+Each harness connects two components.
+The first component is the SUT, which is the protocol implementation whose behavior is being analyzed.
+The second component is another protocol party, which we refer to as the \emph{facilitator}.
+The facilitator provides the inputs that drive the protocol interaction forward.
+Depending on the protocol and the role of the SUT, this interaction may involve completing a handshake or, more generally, exchanging a predefined sequence of packets between protocol parties.
+
+The facilitator implements the complementary protocol role to that of the SUT.
+For example, in a client/server protocol such as DTLS, if the SUTs are server implementations, the facilitator is a client implementation.
+For a fixed protocol role of the SUT, the same facilitator implementation is used across all tested SUTs.
+Although a separate harness instance is constructed for each SUT, these harnesses share the same structure and differ only in the concrete SUT that they execute.
+Reusing the same facilitator ensures that all SUTs are subjected to identical inputs and interaction patterns, and that any observed behavioral differences arise from differences in the SUT implementations rather than from variations in their peers.
+
+To illustrate this setup, we use a running example based on the sequence number handling requirement discussed in \Cref{chapter:paper1}.
+Suppose we wish to compare the behavior of the DTLS server implementations of Mbed TLS and wolfSSL.
+Applying differential SE requires constructing two test harnesses, one for each server implementation.
+Both harnesses use the same DTLS client implementation as the facilitator, for example a client from the Mbed TLS library, although other choices such as OpenSSL are equally possible.
+Each facilitator drives the interaction by sending the same sequence of handshake messages to its corresponding server.
+\Cref{fig:test-harness-arch} shows the architecture of one of the test harnesses used in this running example.
+%
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.7\columnwidth]{figures/paper3:test\_harness.pdf}
+	\caption{Architecture of the test harness used in the running example to test a DTLS server implementation.}
+	\label{fig:test-harness-arch}
+\end{figure}
+%
+\subsection{Running Symbolic Execution}
+Once the test harness has been constructed, it can already be used to perform basic differential testing by executing multiple implementations on identical concrete inputs and comparing their observable behavior.
+Such testing can reveal discrepancies for specific packet sequences, but it remains limited to concrete interactions that are manually selected.
+Leveraging the power of SE extends this basic form of differential testing by systematically exploring variations in selected packet fields and by uncovering behaviors that arise only for specific input values and that may later cause discrepancies.
+
+Differential SE is performed by executing each test harness under an SE engine.
+As in the monitor-based technique, the harness executes in a controlled and deterministic environment.
+However, rather than relying on assertions derived from specification requirements, SE is used to explore how different implementations respond to symbolic variations in protocol inputs.
+Selected fields of packets generated by the facilitator are made symbolic, while all other fields retain their original concrete values.
+
+The SE engine explores the code paths that are feasible for some assignment to the symbolic fields.
+For each explored execution path, the engine records the externally observable outputs produced by the SUT.
+These outputs include packets sent by the SUT or the absence of a response at the selected interaction point.
+Technically, outputs are recorded as symbolic expressions that capture how they depend on the symbolic input fields.
+This representation allows the analysis to reason about output behavior over a large input space without enumerating all concrete assignments explicitly.
+
+Differential SE is conducted in a campaign-based manner.
+For each pair of SUTs, multiple differential SE campaigns are executed.
+Each campaign analyzes a specific protocol interaction and makes a specific set of fields symbolic.
+For example, in DTLS, one campaign may focus on the handshake for a specific cipher suite and manipulate the record sequence number, while another campaign may target a different cipher suite.
+
+Monitors play an important but fundamentally different role in the differential setting than in the specification-based technique introduced in \Cref{chapter:paper2}.
+In differential SE, monitors do not encode protocol requirements and do not raise assertions.
+Instead, they are used to observe packet exchanges and to record selected responses of each implementation during SE.
+In particular, monitors record responses such as packets generated by the SUT or the absence of a response and associate these responses with the symbolic inputs that led to them.
+This information is later used to compare the behavior of different implementations.
+%
+\begin{figure}[hb]
+	\centering
+		\begin{tikzpicture}[node distance=4.8cm]
+			\node[state, initial, xshift=-.1cm] (c1) {\ST{Init}};
+			\node[state, right of=c1] (c2) {\ST{Rcvd}};
+			\node[state, right of=c2, xshift=-0.8cm] (c3) {\ST{End}};    
+			
+			\draw	
+			(c1) edge[loop above, min distance=2em] node{$\frac{
+					\edgelabel{P.source\, =\, Client\,}}{}$} (c1)
+			(c1) edge node[above,  font=\scriptsize]{$
+				\frac{
+					\edgelabel{P.source\, =\, Client}}{
+					\begin{aligned}
+						&\edgelabel{make\_symbolic(\&P.sequence\_number);}
+				\end{aligned}}$} (c2)
+			(c2) edge[bend left=20] node[above]{$\frac{\edgelabel{P.source\, =\, Server}}{\edgelabel{record\_response(P)}}$} (c3)
+			(c2) edge[bend right=20] node[below]{$\frac{\edgelabel{P.source\, =\, Client}}{}$} (c3);
+		\end{tikzpicture}
+	\caption{Monitor recording a DTLS server's responses for different values of \rfc{sequence\_number}.}
+	\label{fig:monitor:dtls:sequence}
+\end{figure}
+%
+
+In the running example, we apply this technique to compare the DTLS server implementations of Mbed TLS and wolfSSL.
+To make the role of monitors in the differential setting concrete, \Cref{fig:monitor:dtls:sequence} shows the monitor used in the running example to observe DTLS server behavior for different values of the \rfc{sequence\_number} field.
+The monitor is invoked on every packet exchanged during the interaction.
+In the starting state \ST{Init}, it passively observes packets sent by the client.
+At a nondeterministically chosen client packet, the monitor makes the \rfc{sequence\_number} field symbolic and transitions to the state \ST{Rcvd}.
+From this point onward, the monitor waits for the next packet sent by the server.
+When such a packet is observed, the monitor records the server's response using the \texttt{record\_response} action and transitions to the terminal state \ST{End}.
+If another client packet is observed instead, the monitor assumes that the server has generated no response and transitions to \ST{End}.
+Reaching the state \ST{End} terminates the current path and prompts the SE engine to record the corresponding path condition.
+
+Running SE with such a monitor produces, for each SUT, a set of explored paths.
+For every explored path, the SE engine records the corresponding path condition together with the selected interaction point and the response observed at that point.
+To ensure that responses are comparable across SUTs, we associate each symbolic field with the position of the packet in the interaction, thereby fixing the interaction point at which responses are observed.
+This position, which we refer to as the \emph{index}, identifies the interaction point at which the symbolic field was introduced.
+
+The \emph{index} is not tracked explicitly by the monitor.
+Instead, the underlying infrastructure assigns a concrete counter value to each packet processed during the interaction and introduces a symbolic variable that selects the packet on which the monitor will act.
+This mechanism is the same as the one used in the monitor-based technique described in \Cref{chapter:paper2}.
+Both the selected index and the symbolic field become part of the path condition recorded by SE.
+
+Finally, to limit the number of explored paths and to reduce the manual effort required for analysis, each differential SE campaign employs a single monitor.
+Such a monitor makes exactly one instance of a field symbolic, while all other instances of the same field in the interaction remain fixed to their concrete values.
+This design isolates the effect of a single symbolic variation at a well-defined interaction point and keeps the analysis manageable.
+
+\subsection{Finding and Analyzing Discrepancies}\label{sec:meth-discrepancies}
+Given two SUTs, denoted $\mathtt{I}$ and $\mathtt{I'}$, the goal of differential SE is to identify common inputs that cause the two SUTs to produce different responses while being in the same interaction point.
+Discrepancy detection is performed as a separate, offline analysis phase that operates on the results produced by SE.
+The process consists of three main steps, which we describe below.
+
+\paragraph{Deriving Path-Output Sets.}
+For each SUT, SE explores a set of execution paths.
+For every explored path, the SE engine records the path condition together with the response observed at the selected interaction point.
+We represent each such record as a \emph{Path-Output} pair of the form $\langle pc, o \rangle$, where $pc$ denotes the path condition and $o$ denotes the recorded response.
+Let $S_I$ denote the set of Path-Output pairs generated by the SE campaign for implementation $\mathtt{I}$.
+
+\paragraph{Deriving Discrepancies Between Implementations.}
+Having obtained the sets $S_I$ and $S_{I'}$ for two implementations $\mathtt{I}$ and $\mathtt{I'}$, we compare these sets to determine whether there exists a common input under which the two implementations produce different responses.
+Because each Path-Output pair is associated with a specific packet index, comparisons are restricted to pairs that correspond to the same interaction point, ensuring that both SUTs are observed in the same interaction point.
+
+If a concrete input can cause $\mathtt{I}$ and $\mathtt{I'}$ to produce different responses, then there must exist a Path-Output pair $\langle pc, o \rangle \in S_I$ and a Path-Output pair $\langle pc', o' \rangle \in S_{I'}$ such that both path conditions are satisfied by the same input and the resulting responses differ.
+This condition can be expressed as the satisfiability of the following formula:
+\begin{gather}
+	\mathtt{(pc \, \land pc') \, \land \, (o \, \neq \, o')}\label{eq:discrepancy}
+\end{gather}
+
+The conjunct $\mathtt{(pc \land pc')}$ ensures that a common assignment to the symbolic input fields satisfies both path conditions, while the conjunct $\mathtt{(o \neq o')}$ ensures that this assignment leads to different responses.
+For each pair of Path-Output pairs $\langle pc, o \rangle$ and $\langle pc', o' \rangle$ with the same packet index, we check the satisfiability of Formula \ref{eq:discrepancy} using an SMT solver.
+If the formula is satisfiable, we ask the solver to produce a valuation for the symbolic input field and the corresponding packet index.
+Each such valuation, together with the differing responses $o$ and $o'$, constitutes a \emph{discrepancy witness}.
+Our technique produces a witness for every pair of Path-Output pairs that satisfies Formula \ref{eq:discrepancy}.
+
+\paragraph{Analyzing Discrepancies for Bugs.}
+For each discrepancy witness, the protocol specification is consulted to determine whether the observed behaviors are compliant.
+At this stage, the RFC serves as a reference for interpretation rather than as an executable oracle.
+If one of the implementations is determined to be non-compliant, we validate the discrepancy by executing the test harness on the unmodified implementation.
+The witness provides both the value of the symbolic field and the index of the packet in which it appears.
+During validation, the corresponding packet is modified to contain the witness value, and the interaction is replayed to confirm that the divergent behavior can be reproduced.
+If confirmed, the non-conformance is reported to the developers.
+
+We conclude this section by instantiating the above procedure for the running example involving the \rfc{sequence\_number} field.
+Symbolic execution produces 37 Path-Output pairs for Mbed TLS and 45 Path-Output pairs for wolfSSL.
+Although these numbers may appear large, all steps up to discrepancy interpretation can be automated.
+Instantiating Formula \ref{eq:discrepancy} for these Path-Output pairs yields three satisfying assignments, each forming a discrepancy witness.
+Each witness contains a concrete value for \rfc{sequence\_number}, the index of the packet containing it, and the corresponding responses produced by the two SUTs.
+
+One of the witnesses indicates that, in the initial interaction point, upon receiving a first \emph{ClientHello} packet with a \rfc{sequence\_number} slightly larger than $2^{44}$, Mbed TLS responds with \emph{HelloVerifyRequest}, indicating acceptance of the packet, while wolfSSL produces no response and appears to silently discard it.
+Consulting the DTLS specification~\cite{RFC6347} reveals that Mbed TLS handles this packet correctly, whereas wolfSSL incorrectly rejects a packet whose sequence number is large but still valid.
+This discrepancy exposes a bug in wolfSSL that can lead to interoperability problems.
+
+\subsection{Selecting Fields for Symbolic Execution}
+The choice of which protocol fields to make symbolic, and which fields of response packets to record, has a significant impact on both the effectiveness and the practicality of differential SE.
+Making too many fields symbolic, or recording overly detailed responses, can quickly lead to an explosion in the number of explored paths and identified discrepancies, many of which may not correspond to meaningful specification violations.
+In this section, we outline general guidelines for selecting input and output fields, following the technique adopted in our implementation.
+
+\paragraph{Selecting Fields to Make Symbolic in Input Packets}
+In principle, our technique can be applied to any protocol field, including fields such as \rfc{sequence\_number}, whose incorrect handling may have serious security or functional implications.
+In practice, however, performance considerations and limitations of SE necessitate a more selective approach.
+In particular, fields that are fed into cryptographic operations are often difficult to handle symbolically.
+Symbolic execution engines typically struggle with cryptographic functions, and accessing encrypted fields within monitors may require additional infrastructure, such as packet decryption.
+To avoid these complications, one option is to restrict symbolic manipulation to fields that are transmitted in plaintext.
+In DTLS, for example, the \rfc{sequence\_number} field is not encrypted and can therefore be accessed and manipulated without decrypting records.
+
+Another option is to disable encryption altogether.
+This can be achieved either through configuration settings supported by the implementation under test or by applying small, targeted modifications to the SUT.
+In our DTLS experiments, we disabled encryption using configuration options provided by the tested implementations.
+\paragraph{Selecting Fields to Record in Response Packets}\label{sec:outputfieldselection}
+Similarly to input fields, one could in principle record entire response packets in order to maximize the number of discrepancies that can be identified.
+In practice, however, recording all response fields tends to produce a large number of discrepancies that are unlikely to correspond to bugs and that significantly increase the manual effort required for analysis.
+For this reason, our technique selectively excludes certain classes of response fields from consideration.
+
+The first class consists of fields that contain nonces or other randomly generated values.
+Recording such fields would almost always lead to trivial discrepancies, since independently generated random values are expected to differ across implementations.
+For example, we do not record the \rfc{random} field in the DTLS \emph{ServerHello} message, as this field contains a nonce.
+
+The second class consists of fields whose values primarily reflect differences in supported features or configuration options across implementations.
+Such differences are often unavoidable and do not necessarily indicate incorrect behavior.
+Recording these fields would therefore result in discrepancies that are unlikely to be representative of actual nonconformance issues.
+As an example, we do not record the \rfc{cipher\_suites} field in the DTLS \emph{ServerHello} message, since its value depends on the set of cryptographic algorithms supported by the implementation, which varies widely across SUTs.
+
+The third class consists of fields whose values depend on fields belonging to the first or second class.
+The same reasons for excluding those fields apply here as well.
+For instance, the DTLS \emph{Finished} message contains the \rfc{verify\_data} field, which is computed as a hash over several protocol fields, including \rfc{random} and \rfc{cipher\_suites}.
+We therefore exclude this field from analysis.
+
+In our implementation, the selection and recording of response fields is handled by a dedicated output-capture component.
+This component is responsible for extracting the chosen fields from response packets and associating them with the corresponding path conditions.
+We describe this component in the next section.
+\section{Implementation}
+This section describes how the differential SE technique introduced in the previous sections is realized in practice.
+The implementation builds directly on the monitor-based infrastructure presented in \Cref{chapter:paper2}.
+In particular, the same packet interception mechanism, monitor invocation model, and protocol-specific parsing infrastructure are reused.
+The main differences lie in how monitors are used, how protocol responses are recorded, and how the results of SE are analyzed to identify discrepancies across implementations.
+
+We first describe the construction of the test harness.
+We then outline the extensions to the SE setup that enable the generation of Path-Output pairs.
+Finally, we describe how discrepancies are identified and discuss optional adaptations to the SUT that improve SE performance.
+
+\subsection{Creating a Test Harness}
+For each SUT, SE is performed within a dedicated test harness.
+As in the monitor-based technique, the harness orchestrates a predefined interaction between the SUT and another protocol party.
+The role of the harness is to provide a controlled and deterministic execution environment in which packet exchanges are fully mediated.
+
+Each test harness consists of two components.
+The first component is the SUT, which is the protocol implementation whose behavior is analyzed.
+The second component is a peer implementation, referred to as the \emph{facilitator}, which drives the interaction by sending protocol messages to the SUT.
+In client/server protocols such as DTLS, when the SUT is a server implementation, the facilitator acts as a client.
+
+All components execute within a single Unix process.
+This design choice is dictated by the SE engine used in our implementation, KLEE~\cite{KLEE@OSDI-08}, which supports only single-threaded execution.
+Communication between the facilitator and the SUT is therefore realized using an in-memory packet exchange mechanism rather than operating system sockets.
+As in the monitor-based technique, this is achieved by overriding standard POSIX socket APIs and redirecting packet transmission through shared queues.
+
+Protocol implementations are typically distributed as libraries accompanied by example programs.
+We construct test harnesses by adapting these example programs.
+In the DTLS setting, we start from the sample client and server programs provided by each library and refactor them into facilitator and SUT components.
+To ensure that all SUTs are exposed to identical inputs, the same facilitator implementation is used across all tested SUTs.
+Only the SUT component varies between harnesses.
+Although a separate harness binary is required for each library, a harness can typically be reused across multiple versions of the same implementation with little or no modification.
+
+For DTLS, each harness executes a handshake between the facilitator and the SUT and then exchanges a small piece of application data.
+Execution proceeds in a loop that terminates when the handshake has completed on both sides and exactly one record containing application data has been exchanged in each direction. 
+The loop also terminates if a fatal alert is generated or if an iteration produces no new data.
+To prevent unbounded execution, we additionally impose a fixed upper bound on the number of iterations.
+
+\subsection{Augmentations to Symbolic Execution}
+Our technique requires extending the SE setup so that protocol responses can be recorded and compared across implementations.
+These extensions reuse large parts of the monitor-based infrastructure described in \Cref{chapter:paper2}, while adapting it to support this technique.
+\subsubsection{Common Infrastructure}
+As in the monitor-based technique, packet exchange between the facilitator and the SUT is mediated by a proxy that intercepts POSIX socket calls.
+When executed under KLEE, the harness invokes custom implementations of socket functions such as \texttt{sendto} and \texttt{recvfrom}, which enqueue and dequeue packet payloads from in-memory queues.
+Each direction of communication maintains a separate queue.
+
+Whenever a packet is dequeued, it is first parsed into a structured representation using protocol-specific infrastructure.
+A monitor is then invoked on this representation.
+After the monitor completes its execution, the possibly modified packet is serialized back into its wire format and delivered to the receiving party.
+This execution model is unchanged from the monitor-based framework and is reused without modification.
+
+\subsubsection{Protocol-Specific Infrastructure}
+In addition to the common infrastructure, our technique relies on several protocol-specific components.
+These include a set of monitors, an output-capture function, and optional parser and serializer components.
+
+\paragraph{Set of Monitors}
+Monitors in the differential setting are considerably simpler than those used for specification-based testing.
+Their role is not to evaluate protocol requirements or check assertions, but to select fields for symbolic exploration and to trigger the recording of responses.
+
+Each monitor is implemented as a C function that operates on a structured packet representation.
+When invoked, the monitor may make a specific packet field symbolic and then wait for a corresponding response from the SUT.
+Only one instance of a field is made symbolic per SE campaign.
+All other instances of the same field remain concrete.
+
+\Cref{fig:dse-implementation:monitor} shows the C implementation of the monitor used in the running example to explore variations of the DTLS \rfc{sequence\_number} field.
+The monitor maintains a simple control state.
+In the initial state, it observes client packets and nondeterministically selects one packet on which to act.
+When that packet is encountered, the \rfc{sequence\_number} field is made symbolic.
+The monitor then waits for the next packet generated by the server and invokes the output-capture function (\texttt{capture\_dtls\_output}) to record the response.
+
+As in the monitor-based framework, nondeterministic selection of the packet index is implemented by the infrastructure rather than explicitly encoded in the monitor.
+Each packet processed during execution is assigned a concrete index, and a symbolic variable ranges over all possible packet indices.
+The monitor transitions from its initial state only when the current packet index matches this symbolic value.
+Both the selected index and the symbolic field value are included in the path condition generated by SE.
+
+\begin{figure}[t]
+	\begin{lstlisting}[language=C, numbers=left, xleftmargin=1em, frame=single,
+		numberstyle=\tiny\color{blue}, showstringspaces=false,
+		escapeinside={//(*@}{@*)}]
+enum STATE { INIT, RCVD, END };  //(*@\label{ln:STATE}@*)
+
+static STATE curr_state = INIT;  //(*@\label{ln:curr_state}@*)
+
+void sequence_number_diff_testing_server(RECORD *P) {
+	if (curr_state == INIT && P.source == CLIENT) {
+		kleener_make_symbolic(&P->sequence_number,
+			sizeof(P->sequence_number), "sequence_number");
+		curr_state = RCVD;
+	}
+	else if (curr_state == RCVD && P.source == SERVER) {
+		capture_dtls_output(P);
+		curr_state = END;
+	}
+	else if (curr_state == RCVD && P.source == CLIENT)
+		curr_state = END;
+	else if (curr_state == END) return;
+}
+	\end{lstlisting}
+	\caption{The C implementation of the monitor of~\cref{fig:monitor:dtls:sequence}.}
+	\label{fig:dse-implementation:monitor}
+\end{figure}
+
+\paragraph{Output-Capture Function}
+Output recording is implemented via a dedicated output-capture function that is invoked by the monitor when a response from the SUT is observed.
+For DTLS, this function inspects the parsed packet produced by the SUT, selects the response fields according to the guidelines in \Cref{sec:outputfieldselection}, and records them as part of the observed response.
+
+When a recorded field depends on symbolic input, the output-capture function records the corresponding symbolic expression.
+As a result, each explored execution path yields a Path-Output pair consisting of a path condition and a symbolic representation of the observed protocol response.
+These Path-Output pairs form the basis for discrepancy detection in the subsequent analysis phase.
+
+\paragraph{Parser and Serializer}
+As in the monitor-based technique, optional parser and serializer components are used to translate between raw packet bytes and structured protocol representations.
+These components simplify the implementation of monitors and output-capture functions by allowing direct access to protocol fields.
+They are reused unchanged from the earlier framework.
+
+\subsection{Finding and Analyzing Discrepancies}
+Executing the test harness under SE produces a set of Path-Output pairs for each tested SUT.
+Each pair consists of an SMT formula encoding the path condition and a symbolic representation of the response recorded by the output-capture function.
+
+For each SE campaign and each tested SUT, KLEE produces one constraint file per explored path, containing the path condition, and a corresponding file that encodes the recorded response.
+Both artifacts are expressed in SMT-LIBv2 format.
+To identify discrepancies, we compare the Path-Output pairs generated for different SUTs using an offline analysis script.
+
+For every pair of SUTs, the script iterates over pairs of paths that correspond to the same packet index and checks the satisfiability of the discrepancy condition represented by Formula~\ref{eq:discrepancy} using the SMT solver Z3.
+If the condition is satisfiable, the solver produces a concrete assignment to the symbolic variables that causes the two SUTs to exhibit different responses.
+This assignment, together with the differing responses, constitutes a discrepancy witness.
+
+Because discrepancy witnesses are analyzed manually, the script applies a simple deduplication strategy.
+A witness is reported only if no previously reported witness exists with the same packet index and the same pair of observed responses.
+This filtering significantly reduces the number of discrepancies that must be inspected while preserving representative cases.
+In our running example, this strategy reduces the number of reported discrepancies from ten to three.
+
+\subsection{Optional SUT Adaptations to Speed Up SE}
+Symbolic execution is substantially slower than native execution, and protocol implementations often include behaviors that further increase analysis complexity.
+As in the monitor-based technique described in \Cref{chapter:paper2}, we apply a small set of optional adaptations to the SUT to improve performance without affecting the logical behavior under analysis.
+
+In particular, we suppress time-based behavior such as retransmissions and timeouts, either through configuration options provided by the implementation or through minor code modifications when necessary.
+We also avoid expensive cryptographic operations during SE.
+For DTLS, this is achieved by configuring the SUT and facilitator to disable encryption after the handshake.
+
+
+\subsection{Evaluation}
+We evaluated our technique to answer four main questions.
+First, how does the technique compare to the monitor-based, specification-driven approach in terms of bug-finding effectiveness.
+Second, how does the required testing effort compare, and how can this effort be optimized.
+Third, can the technique uncover previously unknown bugs in recent versions of DTLS implementations.
+Finally, can the technique be used to detect regressions across implementation versions.
+
+\paragraph{Comparison with Monitor-Based Specification Testing}
+The monitor-based technique presented in \Cref{chapter:paper2} relies on explicitly encoded specification requirements to detect violations.
+As a result, its effectiveness depends directly on the completeness and precision of the specification-based oracle.
+Differential SE removes this dependency by comparing the externally observable behavior of multiple implementations under identical symbolic inputs.
+
+In our evaluation, differential SE uncovered discrepancies that were not detected by the monitor-based approach.
+Several of these discrepancies arose in parts of the protocol that are underspecified or loosely defined in the RFC, making them difficult to encode accurately as specification-based monitors.
+While the monitor-based technique excels at detecting clear violations of explicitly stated requirements, differential SE proved more effective at revealing subtle semantic differences and corner cases that manifest only through comparison.
+The two techniques are therefore complementary rather than redundant.
+
+\paragraph{Testing Effort and Optimization}
+Differential SE requires less manual effort to define protocol oracles, as it does not require extracting and encoding individual specification requirements.
+Instead, the main manual effort lies in selecting protocol interactions, choosing fields to make symbolic, and interpreting the discrepancies produced by the analysis.
+
+The symbolic exploration cost is comparable to that of the monitor-based technique, since both approaches rely on similar test harnesses and SE infrastructure.
+However, differential analysis may initially produce a larger number of candidate discrepancies.
+We mitigate this by restricting each SE campaign to a single symbolic field instance and by applying deduplication during discrepancy analysis.
+These optimizations significantly reduce the number of discrepancies that require manual inspection and keep the overall testing effort manageable.
+
+\paragraph{Detection of Previously Unknown Bugs}
+We applied differential SE to several widely used DTLS server implementations.
+The evaluation uncovered nine previously unknown bugs, including deviations from the protocol specification that can lead to interoperability issues.
+Importantly, these bugs were found in up-to-date versions of the implementations, demonstrating that the technique remains effective even as implementations evolve.
+
+Several of the discovered issues arise from subtle semantic differences in how implementations interpret and enforce protocol rules.
+Such issues are difficult to capture using specification-based testing alone, particularly when the relevant aspects of the specification are underspecified or permit multiple interpretations.
+By systematically comparing behaviors across implementations, differential SE exposes these discrepancies and provides concrete witnesses for further analysis.
+
+\paragraph{Regression Detection}
+Differential SE can also be used to detect regressions by comparing different versions of the same implementation.
+By treating two versions of a library as separate SUTs and executing identical SE campaigns, the technique can reveal behavioral changes introduced by code modifications.
+This allows developers to identify unintended regressions or semantic changes, even when such changes do not violate explicitly encoded specification requirements.
+
+Overall, the evaluation demonstrates that differential SE is an effective and practical complement to specification-based SE.
+By removing reliance on specification-based oracles, the technique enables the discovery of protocol nonconformances and semantic discrepancies that are difficult to detect using explicit requirement checks alone.
+A detailed description of the experimental setup, tested implementations and versions, and the full set of discovered issues is provided in \textcolor{red}{Paper~3}, included later in this thesis.
+
+Building on the techniques presented in earlier chapters, this chapter explored differential SE as a means of testing network protocol implementations without relying on specification-based oracles.
+By comparing the externally observable behavior of multiple implementations under symbolic inputs, the technique complements the requirement-driven and monitor-based approaches presented earlier in this thesis.
+
+Symbolic execution enables systematic exploration of protocol behavior and precise reasoning about corner cases.
+Fuzzing offers a complementary perspective by enabling lightweight, scalable exploration of large input spaces.
+The final chapter brings these approaches together by combining fuzzing and symbolic execution to test protocol requirements in the context of IoT protocols.
+Focusing on the Constrained Application Protocol (CoAP), it demonstrates how these techniques can be applied effectively in resource-constrained environments.
