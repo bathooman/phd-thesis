@@ -299,9 +299,9 @@ Both the selected index and the symbolic field value are included in the path co
 	\begin{lstlisting}[language=C, numbers=left, xleftmargin=1em, frame=single,
 		numberstyle=\tiny\color{blue}, showstringspaces=false,
 		escapeinside={//(*@}{@*)}]
-enum STATE { INIT, RCVD, END };  //(*@\label{ln:STATE}@*)
+enum STATE { INIT, RCVD, END }; 
 
-static STATE curr_state = INIT;  //(*@\label{ln:curr_state}@*)
+static STATE curr_state = INIT;
 
 void sequence_number_diff_testing_server(RECORD *P) {
 	if (curr_state == INIT && P.source == CLIENT) {
