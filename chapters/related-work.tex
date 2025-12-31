@@ -1,1 +1,88 @@
 \chapter{Related Work}\label{chapter:related}
+\section{Specification-Based Protocol Testing}
+Ensuring that protocol implementations conform to their specifications has long been an important goal, motivated by the fact that even subtle deviations can lead to interoperability issues or security vulnerabilities.
+Traditional protocol conformance testing approaches are typically specification driven and rely on abstract models or explicitly encoded properties derived from specification documents such as RFCs.
+
+Model-based testing (MBT) is a well-established approach in this space, where an abstract behavioral model of the protocol is either manually constructed or inferred through learning techniques~\cite{MBT-reactive@2005,Utting:mbt@2006,Tappler@ICST-2017}.
+This model is then used to systematically generate test inputs, which are applied to an implementation, usually in a black-box setting.
+A wide range of modeling formalisms and tooling support has been proposed, including automata-based specifications and domain-specific languages~\cite{Veanes:specexplorer,McMillan:sigcomm19}.
+While MBT can provide strong guarantees when accurate models are available, constructing and maintaining such models for complex evolving protocols is labor intensive.
+
+Property-based testing (PBT) offers a related but often lighter-weight alternative~\cite{ArtsQuviq@Erlang-06,PBT-SensorNetworks@SECON-15,TPBT@ISSTA-17, TPBT@ICST-18}.
+Instead of a full behavioral model, PBT relies on properties that inputs and outputs should satisfy, combined with automated input generation.
+The high-level abstraction and built-in generators provided by PBT frameworks often make them easier to apply than MBT.
+However, as with MBT, the effectiveness of PBT depends on the completeness and precision of the manually specified properties.
+
+Both MBT and PBT are commonly applied in black-box testing scenarios.
+As a result, they are limited in their ability to guide exploration toward specific internal program states or code paths that may expose subtle requirement violations.
+In contrast, white-box techniques can leverage internal program structure to search more directly for inputs that trigger specification violations, especially in the presence of complex control flow and stateful behavior.
+
+\section{Fuzzing for Network Protocol Implementations}
+Fuzz testing has established itself as one of the most effective techniques for uncovering software defects by repeatedly executing a program on mutated inputs and observing unintended behavior, particularly crashes and memory errors.
+Modern coverage-guided greybox fuzzers, such as AFL~\cite{AFL} and its successor AFL++~\cite{AFLplusplus-Woot20}, use lightweight instrumentation to guide input generation toward previously unexplored branches and have achieved considerable success across a wide range of software systems.
+
+Fuzzing has also been applied to network and IoT protocol implementations.
+For example, fuzzers have been used to test IPv6 network stacks in constrained environments~\cite{SoManyFuzzers@ASE-22}, as well as protocol implementations such as CoAP~\cite{liljedahl19,melo-17,zeng-20}.
+
+A key challenge for fuzzing protocol implementations is statefulness.
+Many protocols require specific sequences of messages to reach deep states in the implementation, and naive fuzzing often fails to explore such interactions.
+To address this, several extensions to greybox fuzzing have been proposed, including AFLNET~\cite{AFLNET@ICST-20}, StateAFL~\cite{StateAFL@EmpirSoftEng-22}, SGFuzz~\cite{SGFuzz@USENIX-22}, and SnapFuzz~\cite{SnapFuzz@ISSTA-22}.
+These approaches incorporate protocol state awareness, for instance by tracking message sequences or using lightweight protocol models, in order to improve coverage in stateful systems.
+
+Despite these advances, the primary objective of most fuzzing-based techniques remains the detection of runtime errors such as crashes, assertion failures, or hangs.
+They generally do not aim to check semantic protocol requirements derived from specifications nor do they provide guarantees about the absence of requirement violations.
+Even when stateful fuzzing reaches deep protocol states, violations that do not manifest as immediate runtime failures may remain undetected.
+
+Protocol state fuzzing based on model learning represents a related line of work.
+By inferring abstract state machine models, often in the form of Mealy machines, such techniques can uncover logical flaws in control flow and message ordering~\cite{testing-via-learning,Vaandrager:cacm}.
+This approach had been successfully applied to a variety of protocols, including DTLS~\cite{DTLS-Fuzzer@ICST-22}, TCP~\cite{FH2017,FJV2016}, SSH~\cite{SSH@SPIN-2017}, OpenVPN~\cite{OpenVPN@EuroSPW-2018}, IPSec~\cite{IPSec@IEEEAccess-2019}, QUIC~\cite{Prognosis@SIGCOMM-21,rasool2019}, and EDHOC~\cite{EDHOC-Fuzzer@ISSTA-23}.
+These techniques are effective at exposing inconsistencies in protocol state machines, but they typically operate in a black-box manner and do not directly reason about individual protocol requirements or packet-level field constraints.
+
+\section{Symbolic Execution for Protocol Implementations}
+Symbolic execution (SE) was introduced in the 1970's as a program analysis technique that explores program behavior by treating selected inputs as symbolic rather than concrete values~\cite{King@CACM-76}.
+Advances in constraint solving and tool support over the past two decades have turned SE into a practical and powerful testing technique, capable of uncovering deep bugs and security vulnerabilities that are difficult to expose using random or coverage-guided testing alone~\cite{Cadar:3decades,KLEE@OSDI-08,S2E@12}.
+
+Applying SE to network protocol implementations poses challenges that are not present in traditional single-input programs.
+Protocol implementations are often stateful, process sequences of messages rather than isolated inputs, and interact with other protocol parties and the environment.
+As a result, SE must account for both the values of packet fields and the order in which packets are exchanged.
+
+Several approaches apply SE to protocol implementations by designating specific fields in incoming packets as symbolic, thereby enabling exploration of code paths reachable under different packet contents~\cite{KleeNet,KleeNet-poster,PedrosaFKGMM15,RathSW18,SymbexNet,tempel2023specification, wilson2024analysing}.
+In these approaches, SE is typically used to uncover generic runtime errors, such as crashes or memory safety violations, or to detect interoperability issues between protocol parties.
+For example, Pedrosa \etal~\cite{PedrosaFKGMM15} use SE to characterize messages that can be sent by one protocol party but rejected as non-compliant by another, while Rath \etal~\cite{RathSW18} apply SE to explore interoperability scenarios in QUIC implementations.
+
+A recurring difficulty in these settings is protocol statefulness.
+To reach deep states, an implementation must process a specific sequence of packets, and the correctness of processing a given packet may depend on information accumulated from earlier messages.
+To address this, some approaches incorporate explicit models of protocol behavior.
+Wen \etal~\cite{wen2017model} employ model learning to infer a protocol state machine, which is then provided as additional input to SE, while Tempel \etal~\cite{tempel2023specification} show that taking protocol state into account can significantly increase test coverage.
+These techniques improve path exploration but still focus primarily on coverage and runtime error detection rather than checking compliance with protocol specifications.
+
+Other lines of work symbolically execute multiple protocol parties jointly in order to explore interactions under different synchronization and failure scenarios.
+KleeNet~\cite{KleeNet,KleeNet-poster} extends SE to distributed settings by modeling packet loss and node failures using symbolic variables, allowing the exploration of diverse execution scenarios.
+Similar ideas appear in SymNet~\cite{Symnet}, which applies SE to integration testing of protocol implementations.
+These approaches are effective at identifying interaction and interoperability issues that arise during joint execution of protocol parties, but have limited ability to expose flaws caused by adversarial or malformed inputs, since inputs are typically generated by protocol-compliant peers.
+
+More recent work combines SE and specification-based testing by checking protocol requirements derived from protocol specification documents.
+SymbexNet~\cite{SymbexNet} first applies SE to generate concrete test inputs that explore a wide range of code paths, and then replays these inputs on an unmodified implementation while monitoring the resulting input-output behavior against specification-derived rules.
+While this separation allows requirements to be checked without modifying the system under test, SE in this setting may still miss requirement-violating inputs when violating and non-violating inputs exercise the same code path.
+
+Several approaches address this limitation by guiding SE more explicitly toward requirement-relevant behaviors.
+One line of work, exemplified by Paper~\URoman{1}, embeds assertions and assumptions directly into the SUT's code to constrain SE toward inputs that may violate protocol requirements, enabling systematic exploration of requirement-specific corner cases.
+Subsequent work, represented by Paper~\URoman{2}, externalizes this requirement-checking logic into monitors that observe packet exchanges and interact with the SE engine, reducing the need for intrusive modifications to the implementation.
+These approaches demonstrate that SE can be effectively adapted from a coverage-oriented testing technique into a tool for checking semantic protocol requirements.
+
+Overall, SE offers strong capabilities for systematically exploring protocol implementations under a wide range of inputs.
+However, its effectiveness depends on how statefulness, nondeterminism, and correctness criteria are incorporated into the analysis.
+Unguided SE tends to emphasize code coverage and runtime errors, while exposing semantic protocol violations often requires more targeted approaches, including explicit consideration of protocol requirements or alternative notions of correctness.
+
+An alternative to specification-based correctness checking is differential testing, which detects discrepancies  by comparing the behavior of multiple implementations under the same inputs.
+Differential testing has been widely used to uncover semantic bugs in protocol implementations without requiring a complete specification oracle.
+Differential symbolic execution, introduced by Person \etal~\cite{DSE@08}, extends this idea by enabling systematic exploration of inputs that lead to behavioral differences across executions.
+
+Several works have applied differential SE by comparing the behavior of multiple implementations rather than checking conformance against a single specification.
+Chau \etal~\cite{SymCerts,PKCS} use SE to derive path constraints for certificate validation logic and compare them across implementations to identify discrepancies.
+RFCcert~\cite{RFCcert@ICSE-18} combines specification-derived rules with SE to generate test cases that expose differences between X.509 validators.
+Other approaches apply differential analysis to restricted protocol components or employ offline comparison of execution models, such as ParDiff~\cite{ParDiff@24} and SymTCP~\cite{SymTCP@NDSS-20}.
+These techniques demonstrate the effectiveness of differential reasoning, but typically operate on isolated components or abstracted models rather than complete, stateful protocol interactions.
+
+Together, these lines of work illustrate how advances in SE have progressively expanded the scope of protocol testing, from coverage-oriented exploration to requirement-aware and differential analysis of stateful protocol implementations.
+
