@@ -1,1 +1,47 @@
 \chapter{Future Work}\label{chapter:future}
+The work presented in this thesis demonstrates that requirement-driven and differential symbolic execution can effectively expose subtle nonconformance issues in stateful protocol implementations.
+While the proposed techniques proved effective, several promising directions remain for extending their applicability, degree of automation, and scalability.
+In particular, recent advances in artificial intelligence and machine learning offer opportunities to further reduce manual effort and to improve the practicality of protocol testing.
+
+\paragraph{Automated Extraction of Protocol Requirements Using NLP}
+Protocol requirements are currently identified by manually inspecting specification documents such as RFCs.
+Although the specification text can sometimes be ambiguous and even contradictory, advances in natural language processing open the possibility of automating part of this process.
+Future work could explore the use of NLP techniques to identify normative statements, extract candidate requirements, and map them to structured representations suitable for monitor construction.
+
+Automating the process of requirement extraction would lower the barrier to applying requirement-driven testing to new protocols and help ensure more systematic coverage of protocol specifications.
+
+\paragraph{A High-Level Domain-Specific Language for Monitor Specification}
+In the current framework, monitors are implemented directly as executable code that encodes state machines, symbolic field declarations, and assertion logic.
+While this approach offers precise control over monitor behavior, it requires writing low-level code and familiarity with implementation details.
+A promising direction for future work is the design of a high-level domain-specific language (DSL) for formulating monitors.
+
+Such a DSL would provide a declarative and protocol-aware abstraction for specifying monitor behavior, including state transitions, packet predicates, symbolic field selection, assumptions, and assertions.
+Monitors expressed in the DSL could then be compiled automatically into executable monitors compatible with the existing symbolic execution infrastructure. This would preserve the benefits of external, reusable monitors while significantly reducing manual effort and implementation complexity.
+
+\paragraph{Applicability to Additional Protocol Classes}
+The evaluation in this thesis already spans multiple protocol classes, including transport-layer protocols as well as application-layer protocols such as CoAP.
+An important direction for future work is to further extend this evaluation across a broader and more diverse set of protocol classes, including industrial control protocols, routing and discovery protocols, and emerging application-layer protocols.
+
+While CoAP demonstrates that the approach is applicable beyond transport-layer protocols, additional protocol classes may exhibit different forms of statefulness, looser or more ambiguous specifications, and higher variability across implementations.
+Evaluating the proposed techniques in these settings would help uncover their strengths and limitations more precisely, and may motivate strategies tailored to different protocol families.
+
+\paragraph{Deeper Comparative Analysis of Fuzzing and Symbolic Execution}
+This thesis presents an empirical comparison of fuzzing and symbolic execution for testing protocol requirements, demonstrating that both techniques can effectively expose nonconformances, but with different strengths and limitations.
+A natural direction for future work is to broaden this comparison by considering a wider range of protocols and a more diverse set of requirement types.
+
+Future work could investigate whether certain classes of requirement violations are systematically more difficult for fuzzing to discover.
+In particular, violations that depend on specific corner-case values, long-range dependencies across packet sequences, or precise relationships between multiple protocol fields may exercise the same code paths as conforming executions and therefore evade detection by coverage-guided fuzzers.
+A broader evaluation across additional protocols and diverse requirement types would help clarify the conditions under which fuzzing or symbolic execution is more effective.
+
+\paragraph{Continuous Automated Semantic Regression Testing}
+The thesis demonstrated that differential symbolic execution can be used to detect behavioral regressions by comparing different versions of the same implementation.
+A natural extension is to integrate this capability into continuous integration workflows.
+
+Future work could investigate lightweight, incremental symbolic execution strategies that allow protocol implementations to be tested automatically as part of a development pipeline.
+Such an integration would enable early detection of semantic regressions and unintended behavioral changes, strengthening protocol robustness throughout the development life cycle.
+
+\paragraph{Reducing Manual Effort in Discrepancy Classification}
+While the differential testing approach effectively detects discrepancies, determining whether a discrepancy represents a true nonconformance, a benign difference, or an underspecified behavior still requires manual inspection of the specification.
+Reducing this manual effort is an important challenge for scaling the approach.
+
+AI-assisted discrepancy classification could help address this issue by learning from previously analyzed discrepancies. Models could cluster similar discrepancies, prioritize those likely to correspond to genuine violations, or flag cases that are consistent with known ambiguities in the specification.
