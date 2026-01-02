@@ -63,11 +63,30 @@
 
 
 % Uncomment to use a custom abstract dummy text
-%\abstractdummy{
-%	\begin{abstract}
-%		Please use no more than 300 words and avoid mathematics or complex script.
-%	\end{abstract}
-%}
+\abstractdummy{
+	\begin{abstract}
+		Testing network protocol implementations for conformance with their specifications is challenging due to protocol statefulness, complex dependencies across packet sequences, and large input spaces that hinder exhaustive exploration. 
+		Subtle deviations from specifications can result in interoperability issues or security vulnerabilities, yet often escape detection by conventional testing techniques. 
+		This thesis investigates how symbolic execution and related techniques can be adapted to address these challenges in a systematic and practical manner. 
+		
+		The first contribution of the thesis is a requirement-driven symbolic execution approach for testing stateful network protocol implementations against their specifications. 
+		The approach guides symbolic execution toward execution paths that are relevant for violating protocol requirements expressed over sequences of packets. 
+		By selectively making packet fields symbolic and constraining exploration to requirement-relevant paths, the approach enables the detection of violations that depend on subtle corner-case values.
+		
+		The second contribution is a monitor-based symbolic execution technique that externalizes requirement checking from the system under test. 
+		Protocol requirements are encoded in lightweight monitors that observe packet exchanges, maintain interaction state, and guide symbolic exploration without intrusive modifications to protocol implementations. 
+		This design improves modularity, supports reuse of requirements across implementations and versions, and enables early detection of requirement violations. 
+		
+		The third contribution explores differential symbolic execution as an oracle-free testing technique. 
+		Instead of relying on explicitly encoded requirements, the approach compares observable behaviors across implementations or versions under identical symbolic inputs to identify discrepancies that may indicate nonconformance.
+		
+		The final contribution examines requirement-based testing of IoT protocol implementations using fuzzing and symbolic execution, with CoAP as a case study. 
+		The study analyzes how both techniques can be adapted to check protocol requirements and compares their effectiveness and practical trade-offs in exposing specification violations. 
+		
+		The proposed techniques are evaluated on real-world implementations of widely deployed protocols, including DTLS, QUIC, and CoAP. 
+		The evaluation demonstrates that the proposed techniques uncover numerous previously unknown bugs, specification violations, and interoperability issues, while reducing manual effort compared to existing testing methods.
+	\end{abstract}
+}
 
 
 \begin{document}
