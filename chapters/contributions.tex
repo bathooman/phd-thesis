@@ -3,32 +3,33 @@
 \section{Paper \URoman{1}}
 Paper \URoman{1} presents a requirement-driven application of symbolic execution for testing stateful network protocol implementations against their specifications.
 The paper shows how symbolic execution can be tailored to explore execution paths that are relevant for violating protocol requirements formulated over sequences of packets, rather than single inputs.
-By selectively making protocol fields symbolic and constraining exploration to requirement-relevant behaviors, the approach enables the detection of violations that arise only under specific protocol states and corner case values.
+By selectively making protocol fields symbolic and constraining exploration to requirement-relevant execution paths, the approach enables the detection of violations that arise only under specific protocol states and corner case values.
 
-The paper evaluates the proposed methodology on four widely used DTLS implementations.
+The paper evaluates the proposed methodology on widely used DTLS implementations.
 The results demonstrate its effectiveness in practice, leading to the discovery of \emph{36} previously unknown bugs in mature and extensively tested implementations.
 This confirms that requirement-driven symbolic execution can uncover subtle specification violations that are difficult to detect using existing testing techniques.
 
 In addition, the paper provides publicly available replication material for all experiments, supporting reproducibility and facilitating further research on symbolic execution-based testing of network protocols.
 
 \section{Paper \URoman{2}}
-Paper \URoman{2} introduces a monitor-based symbolic execution technique for testing stateful network protocol implementations against their specification.
-he key contribution is the adaptation of the concept of monitors for use with symbolic execution, enabling protocol requirements to be encoded in external components that observe packet exchanges and maintain interaction state, while symbolic execution explores the behavior of the system under test under symbolic protocol fields.
+Paper \URoman{2} introduces a monitor-based symbolic execution technique for testing stateful network protocol implementations against their specifications.
+The key contribution is the adaptation of the concept of monitors for symbolic execution, in which monitors external to the system under test encode protocol requirements, maintain interaction state, and guide symbolic execution by introducing symbolic protocol fields, assumptions, and assertions.
 By keeping monitors external to the system under test, the technique avoids intrusive instrumentation and allows requirements to be reused across different implementations and versions of the same protocol.
 
 The paper evaluates the proposed technique on multiple real-world protocol implementations and compares it against a state-of-the-art requirement-driven symbolic execution approach.
-The results demonstrate that the monitor-based technique is effective in practice, uncovering \emph{22} previously unknown bugs in DTLS and QUIC implementations, while reducing implementation effort and improving practical applicability.
+The comparison shows that the monitor-based technique exposes requirement violations considerably faster and with significantly less implementation effort.
+In addition, the evaluation demonstrates that the technique is effective in practice, uncovering \emph{22} previously unknown bugs in DTLS and QUIC implementations.
 
 Finally, the paper provides a publicly available testing infrastructure, including reusable test harnesses and sets of monitors for DTLS and QUIC.
 This infrastructure supports replication of the experimental results and facilitates extending the approach to additional protocols and requirements.
 
 \section{Paper \URoman{3}}
 Paper \URoman{3} introduces a differential symbolic execution technique for testing stateful network protocol implementations without relying on a fully specified oracle.
-The key contribution is to compare observable behaviors across implementations under the same symbolic protocol interactions, enabling the detection of nonconformance issues that are difficult to capture using explicit specification-based checks.
+The key contribution is to compare observable behaviors across protocol implementations under the same symbolic inputs, enabling the detection of non-conformance issues that are difficult to capture using explicit specification-based checks.
 
 The paper evaluates the proposed technique on several widely used DTLS server implementations.
-The evaluation reveals multiple discrepancies in the handling of protocol edge cases, leading to the discovery of nine distinct bugs, five of which were previously unknown.
-These results demonstrates that differential symbolic execution can effectively expose subtle behavioral differences that may indicate specification violations.
+The evaluation reveals multiple discrepancies in the handling of protocol edge cases, leading to the discovery of nine distinct bugs, \emph{five} of which were previously unknown.
+These results demonstrate that differential symbolic execution can effectively expose subtle behavioral differences that may indicate specification violations.
 
 In addition, the paper compares the proposed approach against a state-of-the-art specification-based symbolic execution technique.
 The results show that differential symbolic execution is able to detect all bugs found by the specification-based approach, while also uncovering additional issues that are missed when testing relies on an explicit oracle.
@@ -36,5 +37,22 @@ The results show that differential symbolic execution is able to detect all bugs
 Finally, the paper provides a publicly available infrastructure to support replication of the experiments and to facilitate extending the approach to other network protocols.
 
 \section{Paper \URoman{4}}
+Paper \URoman{4} investigates the application of fuzzing and symbolic execution to testing of CoAP protocol implementations against their specifications.
+The paper provides a systematic comparison of fuzzing and symbolic execution with respect to their effectiveness in exposing requirement violations, as well as the time required to do so.
+The results highlight complementary strengths and limitations of the two techniques when applied to protocol conformance testing.
+
+As a result of this evaluation, the paper improves the quality of two CoAP implementations by exposing \emph{nine} previously unknown bugs.
+These findings demonstrate that both fuzzing and symbolic execution can be effective techniques for improving the reliability and correctness of IoT protocol implementations when appropriately adapted.
+
+Finally, the paper provides practical guidance on how fuzzing and symbolic execution can be applied to IoT protocol testing. 
+These insights help inform the selection and configuration of testing techniques for protocols with limited resources, stateful interactions, and complex specification requirements.
 
 \section{Personal Contributions}
+All papers included in this thesis are joint efforts with co-authors.
+My contributions were consistent across Papers \URoman{1}--\URoman{4}, and are summarized below.
+
+I am the primary author of all four papers.
+The overall research direction and methodologies were developed jointly with the co-authors.
+I was responsible for the design and implementation of the proposed approaches, as well as for conducting the experimental evaluations.
+I analyzed the results, prepared and submitted the corresponding bug reports, and communicated the identified bugs to the developers.
+All papers were written collaboratively with the co-authors.
