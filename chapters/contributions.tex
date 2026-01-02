@@ -1,1 +1,40 @@
 \chapter{Contributions}\label{chapter:contributions}
+
+\section{Paper \URoman{1}}
+Paper \URoman{1} presents a requirement-driven application of symbolic execution for testing stateful network protocol implementations against their specifications.
+The paper shows how symbolic execution can be tailored to explore execution paths that are relevant for violating protocol requirements formulated over sequences of packets, rather than single inputs.
+By selectively making protocol fields symbolic and constraining exploration to requirement-relevant behaviors, the approach enables the detection of violations that arise only under specific protocol states and corner case values.
+
+The paper evaluates the proposed methodology on four widely used DTLS implementations.
+The results demonstrate its effectiveness in practice, leading to the discovery of \emph{36} previously unknown bugs in mature and extensively tested implementations.
+This confirms that requirement-driven symbolic execution can uncover subtle specification violations that are difficult to detect using existing testing techniques.
+
+In addition, the paper provides publicly available replication material for all experiments, supporting reproducibility and facilitating further research on symbolic execution-based testing of network protocols.
+
+\section{Paper \URoman{2}}
+Paper \URoman{2} introduces a monitor-based symbolic execution technique for testing stateful network protocol implementations against their specification.
+he key contribution is the adaptation of the concept of monitors for use with symbolic execution, enabling protocol requirements to be encoded in external components that observe packet exchanges and maintain interaction state, while symbolic execution explores the behavior of the system under test under symbolic protocol fields.
+By keeping monitors external to the system under test, the technique avoids intrusive instrumentation and allows requirements to be reused across different implementations and versions of the same protocol.
+
+The paper evaluates the proposed technique on multiple real-world protocol implementations and compares it against a state-of-the-art requirement-driven symbolic execution approach.
+The results demonstrate that the monitor-based technique is effective in practice, uncovering \emph{22} previously unknown bugs in DTLS and QUIC implementations, while reducing implementation effort and improving practical applicability.
+
+Finally, the paper provides a publicly available testing infrastructure, including reusable test harnesses and sets of monitors for DTLS and QUIC.
+This infrastructure supports replication of the experimental results and facilitates extending the approach to additional protocols and requirements.
+
+\section{Paper \URoman{3}}
+Paper \URoman{3} introduces a differential symbolic execution technique for testing stateful network protocol implementations without relying on a fully specified oracle.
+The key contribution is to compare observable behaviors across implementations under the same symbolic protocol interactions, enabling the detection of nonconformance issues that are difficult to capture using explicit specification-based checks.
+
+The paper evaluates the proposed technique on several widely used DTLS server implementations.
+The evaluation reveals multiple discrepancies in the handling of protocol edge cases, leading to the discovery of nine distinct bugs, five of which were previously unknown.
+These results demonstrates that differential symbolic execution can effectively expose subtle behavioral differences that may indicate specification violations.
+
+In addition, the paper compares the proposed approach against a state-of-the-art specification-based symbolic execution technique.
+The results show that differential symbolic execution is able to detect all bugs found by the specification-based approach, while also uncovering additional issues that are missed when testing relies on an explicit oracle.
+
+Finally, the paper provides a publicly available infrastructure to support replication of the experiments and to facilitate extending the approach to other network protocols.
+
+\section{Paper \URoman{4}}
+
+\section{Personal Contributions}

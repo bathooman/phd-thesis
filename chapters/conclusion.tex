@@ -9,7 +9,7 @@ Finally, the thesis explored differential symbolic execution as a complementary 
 As a comparative baseline, the thesis also empirically studied the use of coverage-guided fuzzing for testing protocol requirements and contrasted its effectiveness with symbolic execution in the context of CoAP implementations, highlighting the complementary strengths and limitations of the two techniques.
 
 The proposed techniques were evaluated on multiple real-world implementations of the DTLS, CoAP, and QUIC protocols.
-Across these studies, the techniques uncovered \emph{76} previously unknown specification violations.
+Across these studies, the techniques uncovered \emph{72} previously unknown specification violations.
 These findings were validated in practice, with the majority of the reported issues fixed by developers.
 The discovery of previously unknown bugs in widely deployed protocol implementations indicates that the proposed techniques are applicable beyond controlled academic settings and can be effectively used to analyze production-quality software.
 Overall, the results demonstrate that symbolic execution, when guided by protocol requirements and combined with monitor-based and differential analysis, can systematically expose semantic deviations from protocol specifications that are difficult to detect using conventional testing techniques.
