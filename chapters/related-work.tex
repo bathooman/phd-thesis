@@ -71,7 +71,7 @@ More recent work combines SE and specification-based testing by checking protoco
 SymbexNet~\cite{SymbexNet} first applies SE to generate concrete test inputs that explore a wide range of code paths, and then replays these inputs on an unmodified implementation while monitoring the resulting input-output behavior against specification-derived rules.
 While this separation allows requirements to be checked without modifying the system under test, SE in this setting may still miss requirement-violating inputs when violating and non-violating inputs exercise the same code path.
 
-Several approaches address this limitation by guiding SE more explicitly toward requirement-relevant behaviors.
+Several approaches address this limitation by guiding SE explicitly toward requirement-relevant behaviors.
 One line of work, exemplified by Paper~\URoman{1}, embeds assertions and assumptions directly into the SUT's code to constrain SE toward inputs that may violate protocol requirements, enabling systematic exploration of requirement-specific corner cases.
 Subsequent work, represented by Paper~\URoman{2}, externalizes this requirement-checking logic into monitors that observe packet exchanges and interact with the SE engine, reducing the need for intrusive modifications to the implementation.
 These approaches demonstrate that SE can be effectively adapted from a coverage-oriented testing technique into a tool for checking semantic protocol requirements.

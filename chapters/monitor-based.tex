@@ -97,7 +97,7 @@ When using KLEE as the SE engine, the harness must consolidate all involved prot
 Each party takes turns processing the packets available to it, and the harness advances the protocol interaction by alternating between parties until the interaction terminates or a monitor assertion fails.
 
 \subsection{Encoding Monitors as Programs}\label{sec:monitorencoding}
-Monitors are represented as state machines, similar to the one shown in \Cref{fig:monitor:dtls:content-type}, but to be usable during SE they must be encoded as executable programs.
+Monitors are represented as state machines, similar to the one displayed in \Cref{fig:monitor:dtls:content-type}, but to be usable during SE they must be encoded as executable programs.
 Each monitor is therefore translated into a small program that maintains its control state, stores auxiliary variables, and evaluates transitions whenever a packet is delivered.
 Since we use KLEE as the SE engine, we are constrained to use a programming language that can be compiled to LLVM bitcode.
 In our implementation, monitors are written in C.

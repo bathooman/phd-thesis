@@ -118,7 +118,7 @@ The second class consists of input-output requirements.
 These requirements describe how an implementation must respond to valid inputs, for example by producing an output message whose fields satisfy a specified relation. 
 For these requirements, SE assumes that the input is valid and places the requirement itself in an assertion that checks the correctness of the generated output.
 
-For input-validity requirements, SE must concentrate on requirement-violating inputs rather than on the vast space of valid inputs, so the harness introduces assumptions that encode the negation of the requirement.
+For input-validity requirements, SE should concentrate on requirement-violating inputs rather than on the vast space of valid inputs, so the harness introduces assumptions that encode the negation of the requirement.
 These assumptions restrict SE to inputs under which the requirement may be violated.
 The final step is to check whether the implementation uses the invalid input in a forbidden way.
 Protocols differ in how malformed inputs must be handled.
@@ -162,7 +162,7 @@ A collection of sixteen requirements from the DTLS RFC~\cite{RFC6347} were formu
 
 The evaluation revealed a total of \emph{thirty six} unique bugs, seven of which were classified as vulnerabilities. Several issues were memory related, including out of bounds accesses during message reassembly. Others concerned logical violations of the specification, such as incorrect validation of version fields, improper handling of repeated handshake messages, and failures to respect message ordering rules. Many issues were identified within a short symbolic exploration time, and all of them were acknowledged and fixed by the developers.
 
-In addition to uncovering new issues, our technique also reproduced a known exploitable vulnerability in OpenSSL's function for reassembling fragmented messages.
+In addition to uncovering new issues, our technique also reproduced a previously known exploitable vulnerability in OpenSSL's function for reassembling fragmented messages.
 This reproduction confirms the power and promise of our technique.
 
 For a detailed description of the technique's implementation, the full set of input-validity and input-output requirements we evaluated, and a comprehensive analysis of the issues we discovered, the reader is referred to Paper \URoman{1}.

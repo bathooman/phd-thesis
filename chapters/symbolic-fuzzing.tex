@@ -98,8 +98,8 @@ The requirement is checked using the following logic:
 	\end{split}
 \end{equation*}
 %
-Here, \rfc{REQ\_CODES} denotes the set of CoAP request codes.
-The function $\rfcm{BlockSize}$ extracts the block size indicated by the Block1 option of a packet, and \rfc{ERR\_CODES} denotes the set of CoAP error response codes.
+Here, \rfc{REQ\_CODES} represents the set of CoAP request codes.
+The function $\rfcm{BlockSize}$ extracts the block size specified by the Block1 option of a packet, and \rfc{ERR\_CODES} denotes the set of CoAP error response codes.
 The assertion checks that if a client continues to send request blocks larger than the server's advertised preference, the server responds with an error.
 
 While the RFC does not prescribe a specific error response for this case, requiring an error response provides a reasonable approximation of the intended behavior and allows violations to be detected systematically.
@@ -108,7 +108,7 @@ Once the SUT has been extended with such assertions, they serve as executable re
 Both fuzzing and SE can then be applied to explore whether the implementation can be driven into executions that violate these assertions, thereby revealing instances of protocol nonconformance.
 
 \subsection{Testing Requirements Using Fuzzing}
-To test protocol requirements using fuzzing, we employ coverage-guided fuzzing to generate inputs that may trigger violations of the encoded assertions.
+To test protocol requirements, we employ coverage-guided fuzzing to generate inputs that may trigger violations of the encoded assertions.
 In our evaluation, we use AFL++~\cite{AFLplusplus-Woot20}, a state-of-the-art fuzzer that incorporates techniques from recent research and provides efficient feedback-driven input generation.
 
 Fuzzing is performed by executing the test harness described earlier.
