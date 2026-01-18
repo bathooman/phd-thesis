@@ -1,0 +1,28 @@
+\selectlanguage{swedish}
+
+\chapter{Sammanfattning På Svenska}\label{chapter:sammanfattning}
+Testning av nätverksprotokollimplementationer mot deras specifikationer är en utmanande uppgift på grund av protokollens tillståndsberoende beteende, komplexa beroenden mellan paketsekvenser och stora indatarum.
+Även små avvikelser från en specifikation kan leda till interoperabilitetsproblem eller allvarliga säkerhetssårbarheter, men sådana fel undgår ofta upptäckt med traditionella testmetoder som bygger på konkreta testfall eller ofullständiga testorakel.
+
+Denna avhandling undersöker hur symbolisk exekvering kan anpassas för att systematiskt och praktiskt testa tillståndsberoende nätverksprotokollimplementationer. 
+Avhandlingens första bidrag är en kravdriven metod baserad på symbolisk exekvering, där testningen styrs mot exekveringsvägar som är relevanta för att bryta mot protokollkrav uttryckta över sekvenser av paket. 
+Genom att selektivt göra delar av paket symboliska och begränsa utforskningen till kravrelevanta scenarier möjliggörs upptäckt av subtila fel som endast uppstår för specifika gränsvärden eller hörnfall.
+
+Det andra bidraget är en monitorbaserad testteknik som separerar kravkontroll från det system som testas. 
+Protokollkrav specificeras i lätta monitorer som observerar paketutbyten, upprätthåller tillståndsinformation och styr den symboliska exekveringen utan att kräva ingripande modifieringar av implementationens källkod. 
+Detta förbättrar modularitet, möjliggör återanvändning av krav mellan olika implementationer och versioner, samt förenklar utvidgning till nya protokollkrav.
+
+Det tredje bidraget utforskar differentiell symbolisk exekvering som en testmetod utan explicit orakel. 
+I stället för att kontrollera efterlevnad mot en formellt specificerad kravuppsättning jämförs observerbart beteende mellan olika implementationer eller versioner under identiska symboliska indatasekvenser. 
+Avvikelser i beteende kan därigenom avslöja potentiella fel eller specifikationsbrott även när explicita krav inte har formulerats.
+
+Slutligen studeras kravbaserad testning av IoT-protokoll genom en empirisk jämförelse mellan täckningsstyrd fuzzing och symbolisk exekvering, med CoAP som fallstudie. 
+Analysen belyser teknikernas kompletterande styrkor och svagheter vid testning av protokollkrav.
+
+De föreslagna teknikerna har utvärderats på verkliga implementationer av de allmänt använda protokollen DTLS, QUIC och CoAP. 
+Studierna har resulterat i upptäckten av ett stort antal tidigare okända specifikationsbrott och buggar, av vilka majoriteten har bekräftats och åtgärdats av utvecklarna. 
+Resultaten visar att kravdriven, monitorbaserad och differentiell symbolisk exekvering kan avslöja semantiska avvikelser från protokollspecifikationer som är svåra att upptäcka med konventionella testmetoder, och att teknikerna är praktiskt tillämpbara även på produktionsmogen programvara. 
+
+
+
+\selectlanguage{english}
