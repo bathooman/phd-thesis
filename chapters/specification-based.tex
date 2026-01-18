@@ -72,7 +72,7 @@ This formula captures the essential rule that no two records may share the same 
 We will use this requirement as a running example in the remainder of this chapter
 to illustrate how formalized requirements are tested using SE.
 
-Another example of an input-validity requirement that relates multiple records concerns the DTLS epoch field.
+A further example of an input-validity requirement that relates multiple records concerns the DTLS epoch field.
 The epoch identifies which set of session keys were used to protect a record, and the RFC specifies that its value should be initialized with zero and increase exactly when a \emph{ChangeCipherSpec} is received~\cite[p. 8]{RFC6347}.
 Let $r_i$ denote the $i$th record in the sequence.
 For $n$ received records in a DTLS session, we capture this requirement with the following formula:
