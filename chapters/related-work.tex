@@ -1,12 +1,18 @@
 \chapter{Related Work}\label{chapter:related}
+This chapter reviews related work on techniques applied to protocol implementations, focusing on methods that analyze or test executable protocol code.
+
 \section{Specification-Based Protocol Testing}
 Ensuring that protocol implementations conform to their specifications has long been an important goal, motivated by the fact that even subtle deviations can lead to interoperability issues or security vulnerabilities.
-Traditional protocol conformance testing approaches are typically specification driven and rely on abstract models or explicitly encoded properties derived from specification documents such as RFCs.
+Traditional approaches for testing conformance are typically specification driven and rely on abstract models or explicitly encoded properties derived from specification documents such as RFCs.
 
 Model-based testing (MBT) is a well-established approach in this space, where an abstract behavioral model of the protocol is either manually constructed or inferred through learning techniques~\cite{MBT-reactive@2005,Utting:mbt@2006,Tappler@ICST-2017}.
 This model is then used to systematically generate test inputs, which are applied to an implementation, usually in a black-box setting.
 A wide range of modeling formalisms and tooling support has been proposed, including automata-based specifications and domain-specific languages~\cite{Veanes:specexplorer,McMillan:sigcomm19}.
-While MBT can provide strong guarantees when accurate models are available, constructing and maintaining such models for complex evolving protocols is labor intensive.
+
+Recent work has demonstrated the applicability of MBT to realistic networked and distributed systems.
+Li \etal~\cite{LiMBT@ISSTA21} derive executable tests for networked applications from formal models, while MBT has also been applied to IoT protocols such as BLE~\cite{MBT-IoT@FMICS22} and MQTT~\cite{MBT-MQTT@KBSE20}, uncovering conformance issues in implementations of these protocols.
+
+While MBT can provide strong guarantees when accurate models are available, constructing and maintaining such models for complex evolving protocols remains labor intensive.
 
 Property-based testing (PBT) offers a related but often lighter-weight alternative~\cite{ArtsQuviq@Erlang-06,PBT-SensorNetworks@SECON-15,TPBT@ISSTA-17, TPBT@ICST-18}.
 Instead of a full behavioral model, PBT relies on properties that inputs and outputs should satisfy, combined with automated input generation.
@@ -35,7 +41,7 @@ Even when stateful fuzzing reaches deep protocol states, violations that do not 
 
 Protocol state fuzzing based on model learning represents a related line of work.
 By inferring abstract state machine models, often in the form of Mealy machines, such techniques can uncover logical flaws in control flow and message ordering~\cite{testing-via-learning,Vaandrager:cacm}.
-This approach had been successfully applied to a variety of protocols, including DTLS~\cite{DTLS-Fuzzer@ICST-22}, TCP~\cite{FH2017,FJV2016}, SSH~\cite{SSH@SPIN-2017}, OpenVPN~\cite{OpenVPN@EuroSPW-2018}, IPSec~\cite{IPSec@IEEEAccess-2019}, QUIC~\cite{Prognosis@SIGCOMM-21,rasool2019}, and EDHOC~\cite{EDHOC-Fuzzer@ISSTA-23}.
+This approach had been successfully applied to a variety of protocols, including DTLS~\cite{DTLS-Fuzzer@ICST-22, DTLS-Fuzzer@CSCN-25}, TCP~\cite{FH2017,FJV2016}, SSH~\cite{SSH@SPIN-2017}, OpenVPN~\cite{OpenVPN@EuroSPW-2018}, IPSec~\cite{IPSec@IEEEAccess-2019}, QUIC~\cite{Prognosis@SIGCOMM-21,rasool2019}, and EDHOC~\cite{EDHOC-Fuzzer@ISSTA-23}.
 These techniques are effective at exposing inconsistencies in protocol state machines, but they typically operate in a black-box manner and do not directly reason about individual protocol requirements or packet-level field constraints.
 
 \section{Symbolic Execution for Protocol Implementations}
