@@ -15,8 +15,8 @@ The technique consists of several components.
 We begin by introducing monitors, which form its core.
 \section{Technique}
 \subsection{Monitors}
-Monitors are the central abstraction of the technique.
-A monitor is synchronously invoked during protocol interaction to observe packets exchanged between protocol parties.
+Monitors serve as the central abstraction of the technique.
+A monitor is synchronously invoked during the protocol interaction to observe packets exchanged between protocol parties.
 Based on these observations, it maintains its own internal state and checks whether the SUT behaves according to the protocol specification.
 To cover all potentially requirement-violating values in input fields, the monitor may designate selected fields of incoming packets as symbolic.
 An SE engine will then explore all execution paths that can be reached for any values of these fields, including values that expose requirement violations.

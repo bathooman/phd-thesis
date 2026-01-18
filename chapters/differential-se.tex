@@ -224,7 +224,7 @@ We describe this component in the next section.
 \section{Implementation}
 This section describes how the differential SE technique introduced in the previous sections is realized in practice.
 The implementation builds directly on the monitor-based infrastructure presented in \Cref{chapter:paper2}.
-In particular, the same packet interception mechanism, monitor invocation model, and protocol-specific parsing infrastructure are reused.
+In particular, the same packet interception mechanism, monitor invocation model, and protocol-specific parsing infrastructure are used.
 The main differences lie in how monitors are used, how protocol responses are recorded, and how the results of SE are analyzed to identify discrepancies across implementations.
 
 We first describe the construction of the test harness.
@@ -255,7 +255,7 @@ Although a separate harness binary is required for each library, a harness can t
 
 For DTLS, each harness executes a handshake between the facilitator and the SUT and then exchanges a small piece of application data.
 Execution proceeds in a loop that terminates when the handshake has completed on both sides and exactly one record containing application data has been exchanged in each direction. 
-The loop also terminates if a fatal alert is generated or if an iteration produces no new data.
+The loop also terminates if a fatal alert is generated or if an iteration produces no new packet.
 To prevent unbounded execution, we additionally impose a fixed upper bound on the number of iterations.
 
 \subsection{Augmentations to Symbolic Execution}
@@ -373,8 +373,8 @@ The monitor-based technique presented in \Cref{chapter:paper2} relies on explici
 As a result, its effectiveness depends directly on the completeness and precision of the specification-based oracle.
 Differential SE removes this dependency by comparing the externally observable behavior of multiple implementations under identical symbolic inputs.
 
-In our evaluation, differential SE uncovered discrepancies that were not detected by the monitor-based approach.
-Several of these discrepancies arose in parts of the protocol that are underspecified or loosely defined in the RFC, making them difficult to encode accurately as specification-based monitors.
+In our evaluation, differential SE uncovered nonconformance issues that were not detected by the monitor-based approach.
+Several of these nonconformances arose in parts of the protocol that are underspecified or loosely defined in the RFC, making them difficult to encode accurately as specification-based monitors.
 While the monitor-based technique excels at detecting clear violations of explicitly stated requirements, differential SE proved more effective at revealing subtle semantic differences and corner cases that manifest only through comparison.
 The two techniques are therefore complementary rather than redundant.
 
@@ -410,5 +410,5 @@ By comparing the externally observable behavior of multiple implementations unde
 
 Symbolic execution enables systematic exploration of protocol behavior and precise reasoning about corner cases.
 Fuzzing offers a complementary perspective by enabling lightweight, scalable exploration of large input spaces.
-The final chapter brings these approaches together by combining fuzzing and symbolic execution to test protocol requirements in the context of IoT protocols.
-Focusing on the Constrained Application Protocol (CoAP), it demonstrates how these techniques can be applied effectively in resource-constrained environments.
+The final chapter examines these techniques side by side by applying them to the same set of protocol requirements and implementations.
+Using the Constrained Application Protocol (CoAP) as a case study, it analyzes their effectiveness in identifying requirement violations in resource-constrained environments.
