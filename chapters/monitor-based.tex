@@ -85,7 +85,7 @@ Restricting symbolic manipulation to records whose epoch is zero therefore avoid
 
 Although the example in this section focuses on DTLS, we applied the same monitor-based technique to QUIC by encoding requirements over packet headers, frames, and connection state.
 
-\subsection{Creating a Test Harness}
+\subsection{Creating a Test Harness}\label{sec:paper2:test-harness}
 The technique requires a test harness that executes the protocol parties and invokes a monitor whenever a packet is received by one of them.
 The harness is executed symbolically by the SE engine and is designed as a uniform component that can be equipped with any arbitrary monitor.
 It is independent of the particular requirement being tested.
@@ -145,7 +145,7 @@ trigger retransmissions or abort the interaction if no response is received with
 \section{Implementation}
 This section describes how the monitor-based SE technique introduced above is realized in practice.
 
-\subsection{Generic Infrastructure}
+\subsection{Generic Infrastructure}\label{sec:paper2:generic}
 Many protocols exchange packets over POSIX sockets using an API provided by an operating system library~\cite{unix-network}.
 Our generic infrastructure provides a custom implementation of these APIs that acts as a proxy and redirects communication between the SUT and its peers.
 More concretely, functions that send packets, such as \texttt{sendto}, are replaced by functions that place the packet into a shared queue.

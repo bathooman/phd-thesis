@@ -21,17 +21,17 @@ Deviations from this common behavior may indicate implementation errors, inconsi
 
 To explore such discrepancies systematically, this chapter introduces a differential SE technique for network protocol implementations.
 The technique symbolically executes multiple implementations side by side on shared symbolic packet inputs and observes their externally visible behavior.
-When SE produces execution paths whose responses differ across implementations for a common input, the subsequent analysis reports a behavioral discrepancy and extracts the concrete packet values that induce it.
+When SE produces execution paths whose responses differ across implementations for a common input, the subsequent analysis reports a behavioral discrepancy and extracts concrete packet values that induce it.
 At this stage, no judgment is made about which behavior is correct.
 The resulting packet sequences are instead used as test cases whose effects are analyzed with reference to the protocol specification to determine whether the discrepancy corresponds to a violation, an underspecified behavior, or a permissible implementation choice.
 
-The differential technique builds directly on the monitor-based infrastructure introduced in \Cref{chapter:paper2}.
+The implementation of the differential SE technique builds directly on the monitor-based infrastructure introduced in \Cref{chapter:paper2}.
 The same test harness, packet parsing infrastructure, and SE setup are reused.
 The key difference lies in how observations are interpreted.
-Monitors are no longer used to enforce specification requirements, but instead to observe packet exchanges and record execution outcomes that are later analyzed to identify behavioral discrepancies across implementations.
-This reuse allows differential SE to be integrated into the existing framework while addressing classes of protocol behaviors that are difficult to capture using specification-based oracles alone.
+Monitors are no longer used to check specification requirements, but instead to observe packet exchanges and record execution outcomes that are later analyzed to identify behavioral discrepancies across implementations.
+This reuse allows differential SE to be integrated into the existing framework while addressing aspects of protocol behaviors that are difficult to capture using specification-based oracles alone.
 \section{Technique}
-\subsection{Creating a Test Harness}
+\subsection{Creating a Test Harness}\label{sec:paper3:test-harness}
 Differential SE is performed within a test harness that orchestrates a predefined interaction between a protocol implementation under test and another protocol party.
 As in the monitor-based technique, the purpose of the test harness is to provide a controlled and deterministic execution environment.
 In the differential setting, the harness additionally ensures that multiple implementations are exposed to equivalent inputs.
@@ -46,8 +46,8 @@ Depending on the protocol and the role of the SUT, this interaction may involve 
 The facilitator implements the complementary protocol role to that of the SUT.
 For example, in a client/server protocol such as DTLS, if the SUTs are server implementations, the facilitator is a client implementation.
 For a fixed protocol role of the SUT, the same facilitator implementation is used across all tested SUTs.
-Although a separate harness instance is constructed for each SUT, these harnesses share the same structure and differ only in the concrete SUT that they execute.
-Reusing the same facilitator ensures that all SUTs are subjected to identical inputs and interaction patterns, and that any observed behavioral differences arise from differences in the SUT implementations rather than from variations in their peers.
+Although a separate harness instance is constructed for each SUT, these harnesses share the same structure and differ only in the concrete SUT that is being tested.
+Reusing the same facilitator ensures that all SUTs are subjected to identical inputs and interaction patterns, and that any observed behavioral differences are due to differences in the SUT implementations rather than from variations in their peers.
 
 To illustrate this setup, we use a running example based on the sequence number handling requirement discussed in \Cref{chapter:paper1}.
 Suppose we wish to compare the behavior of the DTLS server implementations of Mbed TLS and wolfSSL.
@@ -82,7 +82,7 @@ This representation allows the analysis to reason about output behavior over a l
 Differential SE is conducted in a campaign-based manner.
 For each pair of SUTs, multiple differential SE campaigns are executed.
 Each campaign analyzes a specific protocol interaction and makes a specific set of fields symbolic.
-For example, in DTLS, one campaign may focus on the handshake for a specific cipher suite and manipulate the record sequence number, while another campaign may target a different cipher suite.
+For example, in DTLS, one campaign may focus on the handshake for a specific cipher suite and investigate how the implementation responds to different values of the record sequence number in input, while another campaign may target a different cipher suite.
 
 Monitors play an important but fundamentally different role in the differential setting than in the specification-based technique introduced in \Cref{chapter:paper2}.
 In differential SE, monitors do not encode protocol requirements and do not raise assertions.
@@ -125,27 +125,31 @@ If another client packet is observed instead, the monitor assumes that the serve
 Reaching the state \ST{End} terminates the current path and prompts the SE engine to record the corresponding path condition.
 
 Running SE with such a monitor produces, for each SUT, a set of explored paths.
-For every explored path, the SE engine records the corresponding path condition together with the selected interaction point and the response observed at that point.
-To ensure that responses are comparable across SUTs, we associate each symbolic field with the position of the packet in the interaction, thereby fixing the interaction point at which responses are observed.
-This position, which we refer to as the \emph{index}, identifies the interaction point at which the symbolic field was introduced.
+To compare the behavior of different SUTs, it is necessary to ensure that symbolic field is introduced at the same point in the protocol interaction.
+To this end, we associate each symbolic field with a specific position in the packet sequence exchanged during the interaction.
+This position, which we refer to as the \emph{index}, identifies the point during the interaction at which a packet field is made symbolic.
 
 The \emph{index} is not tracked explicitly by the monitor.
 Instead, the underlying infrastructure assigns a concrete counter value to each packet processed during the interaction and introduces a symbolic variable that selects the packet on which the monitor will act.
 This mechanism is the same as the one used in the monitor-based technique described in \Cref{chapter:paper2}.
 Both the selected index and the symbolic field become part of the path condition recorded by SE.
+For every explored path, the SE engine records this path condition together with the response observed for the packet in which the field was made symbolic.
 
-Finally, to limit the number of explored paths and to reduce the manual effort required for analysis, each differential SE campaign employs a single monitor.
-Such a monitor makes exactly one instance of a field symbolic, while all other instances of the same field in the interaction remain fixed to their concrete values.
-This design isolates the effect of a single symbolic variation at a well-defined interaction point and keeps the analysis manageable.
+Finally, to limit the number of explored paths and to reduce the manual effort required for analysis, each differential SE campaign employs a single monitor that makes one instance of a protocol field symbolic.
+All other instances of the same field in the interaction remain fixed to their concrete values.
+This design choice isolates the effect of a single symbolic input at a well-defined interaction point, which simplifies both symbolic exploration and the interpretation of discrepancies.
+
+While it is possible to make multiple fields symbolic within a single campaign, doing so significantly increases the number of explored paths and makes it harder to attribute observed discrepancies to specific input values.
+We therefore restrict each campaign to a single symbolic field instance in order to keep the analysis manageable and the resulting discrepancies easier to interpret.
 
 \subsection{Finding and Analyzing Discrepancies}\label{sec:meth-discrepancies}
-Given two SUTs, denoted $\mathtt{I}$ and $\mathtt{I'}$, the goal of differential SE is to identify common inputs that cause the two SUTs to produce different responses while being in the same interaction point.
+Given two SUTs, denoted $\mathtt{I}$ and $\mathtt{I'}$, the goal of differential SE is to identify common inputs that cause the two SUTs to produce different responses when a symbolic field is introduced at the same interaction point.
 Discrepancy detection is performed as a separate, offline analysis phase that operates on the results produced by SE.
 The process consists of three main steps, which we describe below.
 
 \paragraph{Deriving Path-Output Sets.}
 For each SUT, SE explores a set of execution paths.
-For every explored path, the SE engine records the path condition together with the response observed at the selected interaction point.
+For every explored path, the SE engine records the path condition together with the response observed for the packet in which the field was made symbolic.
 We represent each such record as a \emph{Path-Output} pair of the form $\langle pc, o \rangle$, where $pc$ denotes the path condition and $o$ denotes the recorded response.
 Let $S_I$ denote the set of Path-Output pairs generated by the SE campaign for implementation $\mathtt{I}$.
 
@@ -153,22 +157,25 @@ Let $S_I$ denote the set of Path-Output pairs generated by the SE campaign for i
 Having obtained the sets $S_I$ and $S_{I'}$ for two implementations $\mathtt{I}$ and $\mathtt{I'}$, we compare these sets to determine whether there exists a common input under which the two implementations produce different responses.
 Because each Path-Output pair is associated with a specific packet index, comparisons are restricted to pairs that correspond to the same interaction point, ensuring that both SUTs are observed in the same interaction point.
 
-If a concrete input causes $\mathtt{I}$ and $\mathtt{I'}$ to produce different responses, then there exist a Path-Output pair $\langle pc, o \rangle \in S_I$ and a Path-Output pair $\langle pc', o' \rangle \in S_{I'}$ such that both path conditions are satisfied by the same input, while the resulting responses differ.
-This condition can be expressed as the satisfiability of the following formula:
+If a concrete input causes $\mathtt{I}$ and $\mathtt{I'}$ to produce different responses, then there exist a Path-Output pair $\langle pc, o \rangle \in S_I$ and a Path-Output pair $\langle pc', o' \rangle \in S_{I'}$ such that both path conditions are satisfied by the same input, while the resulting responses to this specific input differ.
+When such a concrete input instantiates the symbolic field, the formula
 \begin{gather}
 	\mathtt{(pc \, \land pc') \, \land \, (o \, \neq \, o')}\label{eq:discrepancy}
 \end{gather}
+is satisfied.
 
-The conjunct $\mathtt{(pc \land pc')}$ ensures that a common assignment to the symbolic input fields satisfies both path conditions, while the conjunct $\mathtt{(o \neq o')}$ ensures that this assignment leads to different responses.
-For each pair of Path-Output pairs $\langle pc, o \rangle$ and $\langle pc', o' \rangle$ with the same packet index, we check the satisfiability of Formula \ref{eq:discrepancy} using an SMT solver.
+The conjunct $\mathtt{(pc \land pc')}$ ensures that such a common assignment to the symbolic input fields satisfies both path conditions, while the conjunct $\mathtt{(o \neq o')}$ ensures that this assignment leads to different responses.
+For each pair of Path-Output pairs $\langle pc, o \rangle$ and $\langle pc', o' \rangle$ with the same packet index, we check the satisfiability of Formula (\ref{eq:discrepancy}) using an SMT solver.
 If the formula is satisfiable, we ask the solver to produce a valuation for the symbolic input field and the corresponding packet index.
 Each such valuation, together with the differing responses $o$ and $o'$, constitutes a \emph{discrepancy witness}.
-Our technique produces a witness for every pair of Path-Output pairs that satisfies Formula \ref{eq:discrepancy}.
+Our technique produces a witness for every pair of Path-Output pairs that satisfies Formula (\ref{eq:discrepancy}).
 
 \paragraph{Analyzing Discrepancies for Bugs.}
-For each discrepancy witness, the protocol specification is consulted to determine whether the observed behaviors are compliant.
+For each discrepancy witness, the protocol specification is consulted to interpret the observed behaviors.
 At this stage, the RFC serves as a reference for interpretation rather than as an executable oracle.
-If one of the implementations is determined to be non-compliant, we validate the discrepancy by executing the test harness on the unmodified implementation.
+Several outcomes are possible: both implementations may be compliant with the specification, both may be non-compliant, or the discrepancy may arise from underspecified or ambiguous parts of the protocol where multiple behaviors are permitted.
+
+If the analysis indicates that one implementation is non-compliant while the other behaves in accordance with the specification, we validate the discrepancy by executing the test harness on the unmodified implementation.
 The witness provides both the value of the symbolic field and the index of the packet in which it appears.
 During validation, the corresponding packet is modified to contain the witness value, and the interaction is replayed to confirm that the divergent behavior can be reproduced.
 If confirmed, the non-conformance is reported to the developers.
@@ -176,11 +183,13 @@ If confirmed, the non-conformance is reported to the developers.
 We conclude this section by instantiating the above procedure for the running example involving the \rfc{sequence\_number} field.
 Symbolic execution produces 37 Path-Output pairs for Mbed TLS and 45 Path-Output pairs for wolfSSL.
 Although these numbers may appear large, all steps up to discrepancy interpretation can be automated.
-Instantiating Formula \ref{eq:discrepancy} for these Path-Output pairs yields three satisfying assignments, each forming a discrepancy witness.
+Instantiating Formula (\ref{eq:discrepancy}) for these Path-Output pairs yields three satisfying assignments, each forming a discrepancy witness.
 Each witness contains a concrete value for \rfc{sequence\_number}, the index of the packet containing it, and the corresponding responses produced by the two SUTs.
 
-One of the witnesses indicates that, in the initial interaction point, upon receiving a first \emph{ClientHello} packet with a \rfc{sequence\_number} slightly larger than $2^{44}$, Mbed TLS responds with \emph{HelloVerifyRequest}, indicating acceptance of the packet, while wolfSSL produces no response and appears to silently discard it.
-Consulting the DTLS specification~\cite{RFC6347} reveals that Mbed TLS handles this packet correctly, whereas wolfSSL incorrectly rejects a packet whose sequence number is large but still valid.
+One of the witnesses indicates that, at the initial interaction point, upon receiving a first \emph{ClientHello} packet with a \rfc{sequence\_number} slightly larger than $2^{44}$, Mbed TLS responds with a \emph{HelloVerifyRequest}, indicating acceptance of the packet, while wolfSSL produces no response and appears to silently discard it.
+According to the DTLS specification~\cite[p. 8]{RFC6347}, record sequence numbers are 48-bit values and are valid as long as they remain strictly less than $2^{48}$.
+The sequence number produced by the witness therefore falls within the valid range.
+Consulting the specification reveals that Mbed TLS handles this packet correctly, whereas wolfSSL incorrectly rejects a packet whose sequence number is large but still valid.
 This discrepancy exposes a bug in wolfSSL that can lead to interoperability problems.
 
 \subsection{Selecting Fields for Symbolic Execution}
@@ -232,19 +241,11 @@ We then outline the extensions to the SE setup that enable the generation of Pat
 Finally, we describe how discrepancies are identified and discuss optional adaptations to the SUT that improve SE performance.
 
 \subsection{Creating a Test Harness}
-For each SUT, SE is performed within a dedicated test harness.
-As in the monitor-based technique, the harness orchestrates a predefined interaction between the SUT and another protocol party.
-The role of the harness is to provide a controlled and deterministic execution environment in which packet exchanges are fully mediated.
-
-Each test harness consists of two components.
-The first component is the SUT, which is the protocol implementation whose behavior is analyzed.
-The second component is a peer implementation, referred to as the \emph{facilitator}, which drives the interaction by sending protocol messages to the SUT.
-In client/server protocols such as DTLS, when the SUT is a server implementation, the facilitator acts as a client.
+For each SUT, SE is performed within a dedicated test harness consisting of the SUT and a facilitator, as described in \Cref{sec:paper3:test-harness}.
 
 All components execute within a single Unix process.
 This design choice is dictated by the SE engine used in our implementation, KLEE~\cite{KLEE@OSDI-08}, which supports only single-threaded execution.
-Communication between the facilitator and the SUT is therefore realized using an in-memory packet exchange mechanism rather than operating system sockets.
-As in the monitor-based technique, this is achieved by overriding standard POSIX socket APIs and redirecting packet transmission through shared queues.
+As in the monitor-based technique presented in \Cref{chapter:paper2}, the harness mediates all communication between the facilitator and the SUT; the concrete interception and packet-handling mechanisms are described in \Cref{sec:paper3-common-infra}.
 
 Protocol implementations are typically distributed as libraries accompanied by example programs.
 We construct test harnesses by adapting these example programs.
@@ -256,12 +257,12 @@ Although a separate harness binary is required for each library, a harness can t
 For DTLS, each harness executes a handshake between the facilitator and the SUT and then exchanges a small piece of application data.
 Execution proceeds in a loop that terminates when the handshake has completed on both sides and exactly one record containing application data has been exchanged in each direction. 
 The loop also terminates if a fatal alert is generated or if an iteration produces no new packet.
-To prevent unbounded execution, we additionally impose a fixed upper bound on the number of iterations.
 
 \subsection{Augmentations to Symbolic Execution}
 Our technique requires extending the SE setup so that protocol responses can be recorded and compared across implementations.
 These extensions reuse large parts of the monitor-based infrastructure described in \Cref{chapter:paper2}, while adapting it to support this technique.
-\subsubsection{Common Infrastructure}
+
+\subsubsection{Common Infrastructure}\label{sec:paper3-common-infra}
 As in the monitor-based technique, packet exchange between the facilitator and the SUT is mediated by a proxy that intercepts POSIX socket calls.
 When executed under KLEE, the harness invokes custom implementations of socket functions such as \texttt{sendto} and \texttt{recvfrom}, which enqueue and dequeue packet payloads from in-memory queues.
 Each direction of communication maintains a separate queue.
@@ -324,11 +325,11 @@ void sequence_number_diff_testing_server(RECORD *P) {
 
 \paragraph{Output-Capture Function}
 Output recording is implemented via a dedicated output-capture function that is invoked by the monitor when a response from the SUT is observed.
-For DTLS, this function inspects the parsed packet produced by the SUT, selects the response fields according to the guidelines in \Cref{sec:outputfieldselection}, and records them as part of the observed response.
+Conceptually, this function operates on the structured representation of a protocol message produced by the SUT, extracts a selected set of response fields, and records their values as the observable output for the current execution path.
+The choice of which fields to record is protocol-specific and follows the guidelines described in \Cref{sec:outputfieldselection}.
 
-When a recorded field depends on symbolic input, the output-capture function records the corresponding symbolic expression.
-As a result, each explored execution path yields a Path-Output pair consisting of a path condition and a symbolic representation of the observed protocol response.
-These Path-Output pairs form the basis for discrepancy detection in the subsequent analysis phase.
+For DTLS, the output-capture function inspects the parsed DTLS record produced by the SUT and records selected fields such as message types or alert codes, while excluding fields whose values are nondeterministic or configuration-dependent.
+Analogous output-capture functions are implemented for other protocols by selecting and recording the corresponding protocol-specific response fields.
 
 \paragraph{Parser and Serializer}
 As in the monitor-based technique, optional parser and serializer components are used to translate between raw packet bytes and structured protocol representations.
@@ -343,9 +344,9 @@ For each SE campaign and each tested SUT, KLEE produces one constraint file per 
 Both artifacts are expressed in SMT-LIBv2 format.
 To identify discrepancies, we compare the Path-Output pairs generated for different SUTs using an offline analysis script.
 
-For every pair of SUTs, the script iterates over pairs of paths that correspond to the same packet index and checks the satisfiability of the discrepancy condition represented by Formula~\ref{eq:discrepancy} using the SMT solver Z3.
+For every pair of SUTs, the script iterates over pairs of paths that correspond to the same packet index and checks the satisfiability of the discrepancy condition represented by Formula~(\ref{eq:discrepancy}) using the SMT solver Z3.
 If the condition is satisfiable, the solver produces a concrete assignment to the symbolic variables that causes the two SUTs to exhibit different responses.
-This assignment, together with the differing responses, constitutes a discrepancy witness.
+This assignment, together with the differing responses, yields a discrepancy witness as defined earlier in this chapter.
 
 Because discrepancy witnesses are analyzed manually, the script applies a simple deduplication strategy.
 A witness is reported only if no previously reported witness exists with the same packet index and the same pair of observed responses.
