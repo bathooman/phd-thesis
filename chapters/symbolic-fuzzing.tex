@@ -6,7 +6,7 @@ By progressively extending SE with requirement-driven oracles, external monitors
 However, SE is not the only technique used in practice to test protocol implementations.
 Coverage-guided fuzzing has become a widely adopted approach for testing networked systems, particularly in settings where scalability and low analysis overhead are important.
 Fuzzers excel at exercising large input spaces quickly and can expose robustness issues as well as logical flaws that manifest through externally observable behavior.
-At the same time, fuzzing lacks the ability to reason explicitly about protocol requirements or to systematically target specific semantic conditions.
+At the same time, fuzzing is not typically employed to check protocol requirements or to systematically target specific semantic conditions.
 
 This chapter applies the requirement-centric perspective developed in earlier chapters to both techniques and compares their effectiveness when applied to the same requirements and implementations.
 In particular, it examines how fuzzing and SE differ in their ability to expose requirement violations in the context of an IoT protocol.
@@ -40,7 +40,7 @@ Network protocol specifications define requirements not only over individual mes
 For CoAP, such requirements are specified across several RFC documents, most notably RFC~7252~\cite{RFC7252} and RFC~7959~\cite{RFC7959}.
 Once relevant requirements have been extracted from these specifications, they can be translated into executable assertions that are evaluated during a protocol interaction.
 
-In this chapter, protocol requirements are encoded as assertions over the packets exchanged during an interaction.
+In this work, protocol requirements are encoded as assertions over the packets exchanged during an interaction.
 These assertions are inserted at points in the SUT where response messages are generated, allowing the observed behavior of the implementation to be checked against the specification at runtime.
 In the CoAP implementations considered, assertions were inserted into the functions responsible for transmitting response messages.
 These functions already operate on structured representations of outgoing packets, which allows assertions to directly inspect response fields.
@@ -92,12 +92,14 @@ The requirement is checked using the following logic:
 		& \scriptstyle \mathtt{if} \, (\, \rfcm{first\_response} \, \land \, \rfcm{p_{in}.code} \, \in \, \rfcm{REQ\_CODES})\\[-5pt]
 		& \scriptstyle \quad \rfcm{preferred\_size} \, := \, \rfcm{BlockSize (p_{out})}\\[-5pt]
 		& \scriptstyle \quad \rfcm{first\_response} \, := \, \mathtt{false} \\[-5pt]
-		& \scriptstyle \mathtt{else}\\[-5pt]
+		& \scriptstyle \mathtt{else \, if} (\neg \, \rfcm{first\_response})\\[-5pt]
 		& \scriptstyle \quad \mathtt{assert} ((\rfcm{BlockSize (p_{in})} \, > \, \rfcm{preferred\_size}) \, \implies \\[-5pt]
 		& \scriptstyle \qquad\qquad\qquad \rfcm{p_{out}.code} \, \in \,  \rfcm{ERR\_CODES})
 	\end{split}
 \end{equation*}
 %
+The assertion is evaluated only after the server’s preferred block size has been established by the first relevant response.
+
 Here, \rfc{REQ\_CODES} represents the set of CoAP request codes.
 The function $\rfcm{BlockSize}$ extracts the block size specified by the Block1 option of a packet, and \rfc{ERR\_CODES} denotes the set of CoAP error response codes.
 The assertion checks that if a client continues to send request blocks larger than the server's advertised preference, the server responds with an error.
@@ -108,6 +110,9 @@ Once the SUT has been extended with such assertions, they serve as executable re
 Both fuzzing and SE can then be applied to explore whether the implementation can be driven into executions that violate these assertions, thereby revealing instances of protocol nonconformance.
 
 \subsection{Testing Requirements Using Fuzzing}
+While coverage-guided fuzzing is traditionally used to discover crashes and robustness issues, it can be adapted to support requirement-driven testing when combined with explicit assertions.
+In this work, we use fuzzing not as a  robustness testing technique, but as a vehicle for exploring executions that may violate protocol requirements encoded as runtime assertions.
+The following describes how standard fuzzing infrastructure can be leveraged for this purpose without modifying the fuzzer itself.
 To test protocol requirements, we employ coverage-guided fuzzing to generate inputs that may trigger violations of the encoded assertions.
 In our evaluation, we use AFL++~\cite{AFLplusplus-Woot20}, a state-of-the-art fuzzer that incorporates techniques from recent research and provides efficient feedback-driven input generation.
 
@@ -121,7 +126,10 @@ Some protocol requirements, particularly those related to block-wise transfer in
 Standard fuzzers are not designed to reason about such stateful interactions.
 To accommodate these requirements, we represent the packets of a complete interaction as a single contiguous input buffer, with each packet placed at a fixed offset.
 During execution, the harness delivers packets to the SUT by reading from the appropriate offsets within this buffer.
-This design allows the fuzzer to mutate a single input buffer while still exercising a multi-packet protocol interaction.
+Since the fuzzer is free to arbitrarily mutate the input buffer, packet boundaries are not guaranteed to remain intact.
+As a result, some mutated inputs may cause packet boundaries to shift or packets to become malformed.
+In such cases, the harness may fail to parse the input correctly or the SUT may immediately reject the input, and these executions do not contribute to requirement checking.
+When packet parsing succeeds, however, this design allows the fuzzer to mutate a single input buffer while still exercising a multi-packet protocol interaction.
 As a result, state-dependent requirements can be tested using standard fuzzing infrastructure without modifying the fuzzer itself.
 
 Taking into account the inherent randomness of fuzzing, campaigns are repeated multiple times to increase confidence in their ability to expose violations.
@@ -133,6 +141,8 @@ However, its effectiveness depends on the fuzzer's ability to reach inputs that 
 In the next subsection, we contrast this behavior with SE, which reasons explicitly about such conditions and can systematically target individual requirements.
 
 \subsection{Testing Requirements Using Symbolic Execution}
+The approach for testing requirements using SE employed in this work closely follows the requirement-driven SE technique introduced in Chapter~\ref{chapter:paper1}, using the same test harness structure and execution model.
+The main differences in this work concern the protocol under test and the specific requirements considered, rather than the underlying SE methodology.
 To test protocol requirements using SE, we employ KLEE~\cite{KLEE@OSDI-08}, which we use as the SE engine throughout this thesis.
 As in the fuzzing-based approach, SE is performed by executing the test harness described earlier.
 However, unlike fuzzing, SE targets individual requirements explicitly and is therefore performed in separate runs, with each run checking exactly one requirement.
@@ -141,10 +151,7 @@ In each SE run, KLEE executes the test harness using a pre-captured sequence of 
 Before a packet is processed by the protocol party, the fields relevant to the requirement being checked are designated as symbolic, while all other fields remain concrete.
 This selective symbolic treatment restricts exploration to the part of the input space that is relevant for the requirement and avoids unnecessary path explosion.
 
-To enable symbolic manipulation of protocol fields, incoming packets are first parsed into structured data representations using a CoAP-specific parser.
-Selected fields in these structures are then made symbolic using KLEE's API.
-After symbolic values have been introduced, the modified data structures are serialized back into byte buffers, which are subsequently processed by the protocol implementation.
-This parsing and serialization step allows SE to operate at the level of protocol fields rather than raw byte arrays.
+As in the earlier chapters, packets are parsed into structured representations to allow symbolic manipulation of individual protocol fields, and are serialized back into byte buffers before being processed by the protocol implementation.
 
 As an example, to test the Message ID Echo requirement, the \rfc{message\_id} and \rfc{type} fields of the incoming packet are made symbolic.
 KLEE then explores all feasible execution paths that arise from different assignments to these fields.
@@ -160,7 +167,7 @@ The purpose of the evaluation is to assess how fuzzing and SE behave in practice
 The evaluation focused on a set of representative protocol requirements extracted from the CoAP specification and its extensions.
 
 Overall, our findings demonstrate that both fuzzing and SE are effective at exposing protocol nonconformances when requirements are encoded explicitly as assertions.
-Across the evaluated requirements, the two techniques identified a total of nine distinct nonconformances in the tested implementations.
+Across the evaluated requirements, both fuzzing and SE independently identified the same set of nine distinct nonconformances in the tested implementations.
 All identified issues were reported to the respective developers, and most have been fixed at the time of writing.
 These results indicate that assertion-based testing is capable of uncovering concrete and actionable specification violations in real-world CoAP implementations.
 
