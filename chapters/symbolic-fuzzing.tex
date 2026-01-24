@@ -111,9 +111,8 @@ Both fuzzing and SE can then be applied to explore whether the implementation ca
 
 \subsection{Testing Requirements Using Fuzzing}
 While coverage-guided fuzzing is traditionally used to discover crashes and robustness issues, it can be adapted to support requirement-driven testing when combined with explicit assertions.
-In this work, we use fuzzing not as a  robustness testing technique, but as a vehicle for exploring executions that may violate protocol requirements encoded as runtime assertions.
-The following describes how standard fuzzing infrastructure can be leveraged for this purpose without modifying the fuzzer itself.
-To test protocol requirements, we employ coverage-guided fuzzing to generate inputs that may trigger violations of the encoded assertions.
+In this work, we use fuzzing not as a robustness testing technique, but as a mechanism for exploring executions that may violate protocol requirements encoded as runtime assertions.
+Standard fuzzing infrastructure can be leveraged for this purpose without modifying the fuzzer itself, by generating inputs that may trigger violations of the encoded assertions.
 In our evaluation, we use AFL++~\cite{AFLplusplus-Woot20}, a state-of-the-art fuzzer that incorporates techniques from recent research and provides efficient feedback-driven input generation.
 
 Fuzzing is performed by executing the test harness described earlier.
@@ -167,7 +166,7 @@ The purpose of the evaluation is to assess how fuzzing and SE behave in practice
 The evaluation focused on a set of representative protocol requirements extracted from the CoAP specification and its extensions.
 
 Overall, our findings demonstrate that both fuzzing and SE are effective at exposing protocol nonconformances when requirements are encoded explicitly as assertions.
-Across the evaluated requirements, both fuzzing and SE independently identified the same set of nine distinct nonconformances in the tested implementations.
+Across the evaluated requirements, both fuzzing and SE identified the same set of nine distinct nonconformances in the tested implementations.
 All identified issues were reported to the respective developers, and most have been fixed at the time of writing.
 These results indicate that assertion-based testing is capable of uncovering concrete and actionable specification violations in real-world CoAP implementations.
 
