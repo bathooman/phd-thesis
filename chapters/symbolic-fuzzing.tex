@@ -38,7 +38,7 @@ By sharing a common harness, both techniques are applied to identical interactio
 \subsection{Encoding Protocol Requirements as Assertions}
 Network protocol specifications define requirements not only over individual messages but also over sequences of messages exchanged between protocol entities.
 For CoAP, such requirements are specified across several RFC documents, most notably RFC~7252~\cite{RFC7252} and RFC~7959~\cite{RFC7959}.
-Once a set of requirements have been extracted from these specifications, they can be translated into executable assertions that are evaluated during a protocol interaction.
+Once a set of requirements has been extracted from these specifications, they can be translated into executable assertions that are evaluated during a protocol interaction.
 
 In this work, protocol requirements are encoded as assertions over the packets exchanged during an interaction.
 These assertions are inserted at points in the SUT where response messages are generated, allowing the observed behavior of the implementation to be checked against the specification at runtime.

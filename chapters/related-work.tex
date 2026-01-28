@@ -3,9 +3,9 @@ This chapter reviews related work on techniques for testing protocol implementat
 
 \section{Specification-Based Protocol Testing}
 Ensuring that protocol implementations conform to their specifications has long been an important goal, motivated by the fact that even subtle deviations can lead to interoperability issues or security vulnerabilities.
-Traditional approaches for testing conformance are typically specification driven and rely on abstract models or explicitly encoded properties derived from specification documents such as RFCs.
+Traditional approaches for testing conformance are typically specification-driven and rely on abstract models or explicitly encoded properties derived from specification documents such as RFCs.
 
-Model-based testing (MBT) is a well-established approach in this space, where an abstract behavioral model of the protocol is either manually constructed or inferred through learning techniques~\cite{MBT-reactive@2005,Utting:mbt@2006,Tappler@ICST-2017}.
+Model-based Testing (MBT) is a well-established approach in this space, where an abstract behavioral model of the protocol is either manually constructed or inferred through learning techniques~\cite{MBT-reactive@2005,Utting:mbt@2006,Tappler@ICST-2017}.
 This model is then used to systematically generate test inputs, which are applied to an implementation, usually in a black-box setting.
 A wide range of modeling formalisms and tooling support has been proposed, including automata-based specifications and domain-specific languages~\cite{Veanes:specexplorer,McMillan:sigcomm19}.
 
@@ -42,11 +42,11 @@ Even when stateful fuzzing reaches deep protocol states, violations that do not 
 
 Protocol state fuzzing based on model learning represents a related line of work.
 By inferring abstract state machine models, often in the form of Mealy machines, such techniques can uncover logical flaws in control flow and message ordering~\cite{testing-via-learning,Vaandrager:cacm}.
-This approach has been successfully applied to a variety of protocols, including DTLS~\cite{DTLS-Fuzzer@ICST-22, DTLS-Fuzzer@CSCN-25}, TCP~\cite{FH2017,FJV2016}, SSH~\cite{SSH@SPIN-2017}, OpenVPN~\cite{OpenVPN@EuroSPW-2018}, IPSec~\cite{IPSec@IEEEAccess-2019}, QUIC~\cite{Prognosis@SIGCOMM-21,rasool2019}, and EDHOC~\cite{EDHOC-Fuzzer@ISSTA-23}.
+This approach has been successfully applied to a variety of protocols, including DTLS~\cite{DTLS@USENIX-20, DTLS-Fuzzer@CSCN-25}, TCP~\cite{FH2017,FJV2016}, SSH~\cite{SSH@SPIN-2017}, OpenVPN~\cite{OpenVPN@EuroSPW-2018}, IPSec~\cite{IPSec@IEEEAccess-2019}, QUIC~\cite{Prognosis@SIGCOMM-21,rasool2019}, and EDHOC~\cite{EDHOC-Fuzzer@ISSTA-23}.
 These techniques are effective at exposing inconsistencies in protocol state machines, but they typically operate in a black-box manner and do not directly reason about individual protocol requirements or packet-level field constraints.
 
 \section{Symbolic Execution for Protocol Implementations}
-Symbolic execution (SE) was introduced in the 1970's as a program analysis technique that explores program behavior by treating selected inputs as symbolic rather than concrete values~\cite{King@CACM-76}.
+Symbolic execution (SE) was introduced in the 1970s as a program analysis technique that explores program behavior by treating selected inputs as symbolic rather than concrete values~\cite{King@CACM-76}.
 Advances in constraint solving and tool support over the past two decades have turned SE into a practical and powerful testing technique, capable of uncovering deep bugs and security vulnerabilities that are difficult to expose using random or coverage-guided testing alone~\cite{Cadar:3decades,KLEE@OSDI-08,S2E@12}.
 
 Applying SE to network protocol implementations poses challenges that are not present in traditional single-input programs.
@@ -81,7 +81,7 @@ Overall, SE offers strong capabilities for systematically exploring protocol imp
 However, its effectiveness depends on how statefulness, nondeterminism, and correctness criteria are incorporated into the analysis.
 Unguided SE tends to emphasize code coverage and runtime errors, while exposing semantic protocol violations often requires more targeted approaches, including explicit consideration of protocol requirements or alternative notions of correctness.
 
-An alternative to specification-based correctness checking is differential testing, which detects discrepancies  by comparing the behavior of multiple implementations under the same inputs.
+An alternative to specification-based correctness checking is differential testing, which detects discrepancies by comparing the behavior of multiple implementations under the same inputs.
 Differential testing has been widely used to uncover semantic bugs in protocol implementations without requiring a complete specification oracle.
 Differential symbolic execution, introduced by Person \etal~\cite{DSE@08}, extends this idea by enabling systematic exploration of inputs that lead to behavioral differences across executions.
 

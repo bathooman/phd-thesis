@@ -50,8 +50,8 @@ These rules and expected behaviors are formally defined in protocol specificatio
 A protocol specification describes the syntax and semantics of messages, the constraints on field values, the permitted ordering of messages, and the state transitions that occur during communication. 
 For internet protocols, these specifications are published as \emph{Requests for Comments (RFCs)} by the Internet Engineering Task Force (IETF). 
 RFCs serve as the primary reference for implementers and define both mandatory and optional requirements through keywords such as \emph{MUST}, \emph{SHOULD}, and \emph{MAY}. 
-For example, RFC 6347~\cite[p. 9]{RFC6347} mandates that ``implementations \emph{MUST} either abandon an association or rehandshake prior to allowing the sequence number to wrap,`` illustrating how specifications define concrete behaviors to preserve reliability and correctness. 
-While the specification captures the abstract rules of communication, it is written in natural language and often includes explanatory text, loosely defined conditions, ambiguous phrasing, or even contradictory statements.
+For example, RFC 6347~\cite[p. 9]{RFC6347} mandates that ``implementations \emph{MUST} either abandon an association or rehandshake prior to allowing the sequence number to wrap`` illustrating how specifications define concrete behaviors to preserve reliability and correctness. 
+While a specification captures the abstract rules of communication, it is written in natural language and often includes explanatory text, loosely defined conditions, ambiguous phrasing, or even contradictory statements.
 
 An implementation, by contrast, is a concrete realization of the specification in code.
 It translates the abstract protocol rules into data structures, algorithms, message parsing, and processing logic.
@@ -73,7 +73,7 @@ Over time, such de facto standards can diverge from the official specification, 
 \section{Protocol Conformance Testing}
 Protocol conformance testing is the process of assessing whether an implementation behaves according to the requirements defined in the protocol specification.
 Its goal is to ensure that the observable behavior of a system matches the behavior prescribed by the specification, thereby ensuring interoperability and correctness across independent implementations.
-Unlike functional testing, which focuses on whether a component produces the right output for a given input, conformance testing evaluates compliance with externally defined standards.
+Unlike functional testing, which focuses on whether a component produces the correct output for a given input, conformance testing evaluates compliance with externally defined standards.
 
 Traditional approaches to conformance testing are often \emph{black-box} methods, where the implementation is evaluated solely through its input-output behavior.
 Testers provide sequences of protocol messages as input and observe the resulting outputs, comparing them to the behaviors prescribed by the specification.
@@ -103,23 +103,23 @@ Symbolic execution therefore provides a systematic basis for testing protocol co
 Despite providing a systematic foundation for testing protocol conformance, SE faces several challenges when applied to real-world network protocol implementations.
 These challenges arise from both the technical complexity of SE itself and the characteristics of protocol implementations.
 
-\subsubsection{Path explosion.}
+\subsubsection{Path explosion}
 Symbolic execution in theory explores all feasible execution paths in a program.
 In practice, exploring every path is impossible since the number of paths grows exponentially with the program size and can even be infinite in the presence of unbounded loops or recursive calls.
-With highly parameterized messages and stateful logic, path explosion is unavoidable in network protocol implementations and must be accounted for in any realistic application of SE for conformance testing, as each new message and state transition can create additional branching conditions that expand the symbolic search space.
+With highly parameterized messages and stateful logic, path explosion is unavoidable in network protocol implementations and must be accounted for in any realistic application of SE for testing conformance, as each new message and state transition can create additional branching conditions that expand the symbolic search space.
 
-\subsubsection{Stateful behavior.}
+\subsubsection{Stateful behavior}
 Network protocols often maintain internal state across sequences of messages, and the interpretation of an incoming message depends on the outcome of earlier exchanges.
 Classical SE is designed for stateless programs, in which each input is processed independently of all previous inputs.
 In protocols, however, validating certain requirements depends on observing specific sequences of message exchanges rather than isolated interactions.
 Applying SE to network protocol implementations therefore requires reasoning about how earlier symbolic inputs influence subsequent behavior.
 
-\subsubsection{Modeling network communication.}
+\subsubsection{Modeling network communication}
 Communication between protocol entities occurs through socket calls that handle the exchange of messages over the network.
 Classical SE, however, cannot directly reason about these interactions, since they take place outside the control of the program under analysis.
 Therefore, interactions performed through sockets must either be modeled or abstracted to enable symbolic analysis of protocol implementations.
 
-\subsubsection{Formalization of requirements.}
+\subsubsection{Formalization of requirements}
 Symbolic execution relies on oracles to determine whether observed behaviors conform to the protocol specification.
 Network protocol specifications, however, are written in natural language, and their ambiguities, cross-references, and conditional statements make it difficult to translate them into formal properties that can be checked automatically. 
 As a result, defining precise conformance criteria that capture the intent of the specification remains a major obstacle to applying SE effectively in protocol testing.

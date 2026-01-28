@@ -7,9 +7,9 @@ For example, a field in one message may depend on a value in a previous message,
 Testing such requirements is challenging. 
 Traditional fuzzers concentrate on triggering crashes and often operate without awareness of protocol state.
 Standard symbolic execution (SE) tools are powerful for analyzing single inputs, yet they do not directly address multi-packet interactions or stateful requirements.
-When applied naively to protocol implementations, these tools either fail to explore relevant paths or become overwhelmed by the path explosion caused by large input space.
+When applied naively to protocol implementations, these tools either fail to explore relevant paths or become overwhelmed by the path explosion caused by large input spaces.
 
-The work presented in this chapter introduces a technique that applies SE in a requirement driven manner.
+The work presented in this chapter introduces a technique that applies SE in a requirement-driven manner.
 The aim is to systematically search for inputs that violate specific RFC requirements and to produce concrete packet sequences that expose the deviation in the implementation under test.
 The objective is not limited to detecting crashes. 
 It also focuses on revealing non-conformance flaws that may affect security or interoperability.
@@ -25,7 +25,7 @@ Other requirements relate received inputs to the outputs that an implementation 
 In both cases, requirements often involve relationships across multiple packets and cannot be expressed as predicates over a single message in isolation.
 
 To express such predicates precisely, we adopt a simple model of interaction.
-A DTLS session is viewed as a finite sequence of records received by one protocol party; we denote this sequence by $R$.
+For DTLS, a session is viewed as a finite sequence of records received by one protocol party, which we denote by $R$.
 We write $r, r' \, \in \, R$ to range over individual records in the sequence.
 Equality between records refers to their position in the sequence: $r = r'$ means that they are the same occurrence of a record, not merely two records with identical contents.
 Each record is a structured object containing fields such as \rfc{type}, \rfc{epoch}, and \rfc{sequence\_number}.

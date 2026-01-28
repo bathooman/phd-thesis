@@ -1,7 +1,7 @@
 \chapter{Background}\label{chapter:background}
 \section{Traditional Testing Methods}
 Testing has long been a central technique for assessing software correctness.
-Traditional approaches operate by exercising selected program behaviors under representative inputs and observing whether the outputs match the expectations defined by a specification.
+Traditional approaches operate by exercising selected program behaviors under representative inputs and observing whether the outputs match the expectations defined by the relevant specification.
 In practice, this usually involves a hierarchy of testing activities.
 Unit tests target individual functions or modules in isolation, while integration and system tests examine interactions among components and validate end-to-end functionality in realistic settings.
 Regression tests ensure that previously correct behavior is preserved as the software evolves.
@@ -16,7 +16,6 @@ Testing can therefore increase confidence in correctness by revealing flaws in t
 While this fundamental limitation applies to all testing techniques, traditional approaches face additional practical constraints.
 Manually crafted tests scale poorly to complex systems, provide limited coverage of hard-to-reach behaviors, and require substantial effort to maintain as software evolves.
 These practical challenges motivated the development of more systematic and automated testing approaches, particularly in domains where correctness depends on structured inputs, ordered sequences of operations, or adherence to detailed specifications.
-
 
 The next subsection introduces such automated methods in the context of protocol testing.
 
@@ -149,7 +148,7 @@ The paths, conditions, and corresponding witnesses are summarized in \Cref{tab:m
 		\bottomrule
 	\end{tabular}
 	\vspace{1ex}
-	\caption{Feasible paths, path conditions, and corresponding witnesses for the program in \Cref{lst:max-func}}
+	\caption{Feasible paths, path conditions, and corresponding witnesses for the program in \Cref{lst:max-func}.}
 	\label{tab:max-paths}
 \end{table}
 \smallskip
