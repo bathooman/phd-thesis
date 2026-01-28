@@ -98,7 +98,7 @@ The requirement is checked using the following logic:
 	\end{split}
 \end{equation*}
 %
-The assertion is evaluated only after the server's preferred block size has been established by the first relevant response; in the formulation presented in Paper~\URoman{4}, this condition is implicit and is made explicit here to avoid reading the assertion before the preference is initialized.
+The assertion is evaluated only after the server's preferred block size has been established by the first relevant response; in the formulation presented in Paper~\URoman{4}, this condition is implicit and is made explicit here to avoid executing the assertion before the preference is initialized.
 
 Here, \rfc{REQ\_CODES} represents the set of CoAP request codes.
 The function $\rfcm{BlockSize}$ extracts the block size specified by the Block1 option of a packet, and \rfc{ERR\_CODES} denotes the set of CoAP error response codes.
