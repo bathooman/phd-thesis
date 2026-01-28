@@ -352,9 +352,9 @@ A witness is reported only if no previously reported witness exists with the sam
 This filtering significantly reduces the number of discrepancies that must be inspected while preserving representative cases.
 In our running example, this strategy reduces the number of reported discrepancies from ten to three.
 
-\subsection{Optional SUT Adaptations to Speed Up SE}
-Symbolic execution is substantially slower than native execution, and protocol implementations often include behaviors that further increase analysis complexity.
-As in the monitor-based technique described in \Cref{chapter:paper2}, we apply a small set of optional adaptations to the SUT to improve performance without affecting the logical behavior under analysis.
+\subsection{Optional SUT Adaptations}
+%Symbolic execution is substantially slower than native execution, and protocol implementations often include behaviors that further increase analysis complexity.
+As in the monitor-based technique described in \Cref{chapter:paper2}, we apply a small set of optional adaptations to the SUT to improve performance without affecting the analysis.
 
 In particular, we suppress time-based behavior such as retransmissions and timeouts, either through configuration options provided by the implementation or through minor code modifications when necessary.
 We also avoid expensive cryptographic operations during SE.
