@@ -181,12 +181,12 @@ During validation, the corresponding packet is modified to contain the witness v
 If confirmed, the non-conformance is reported to the developers.
 
 We conclude this section by instantiating the above procedure for the running example involving the \rfc{sequence\_number} field.
-Symbolic execution produces 37 Path-Output pairs for Mbed TLS and 45 Path-Output pairs for wolfSSL.
-Although these numbers may appear large, all steps up to discrepancy interpretation can be automated.
-Instantiating Formula (\ref{eq:discrepancy}) for these Path-Output pairs yields three satisfying assignments, each forming a discrepancy witness.
+Symbolic execution produces 35 Path-Output pairs for Mbed TLS and 28 Path-Output pairs for wolfSSL.
+%Although these numbers may appear large, all steps up to discrepancy interpretation can be automated.
+Instantiating Formula (\ref{eq:discrepancy}) for these Path-Output pairs yields two satisfying assignments, each forming a discrepancy witness.
 Each witness contains a concrete value for \rfc{sequence\_number}, the index of the packet containing it, and the corresponding responses produced by the two SUTs.
 
-One of the witnesses indicates that, upon receiving the first \emph{ClientHello} packet with a \rfc{sequence\_number} slightly larger than $2^{44}$, Mbed TLS responds with a \emph{HelloVerifyRequest}, indicating acceptance of the packet, while wolfSSL produces no response and appears to silently discard it.
+One of the witnesses indicates that, upon receiving the first \emph{ClientHello} packet with a \rfc{sequence\_number} slightly larger than $2^{47}$, Mbed TLS responds with a \emph{HelloVerifyRequest}, indicating acceptance of the packet, while wolfSSL produces no response and appears to silently discard it.
 According to the DTLS specification~\cite[p. 8]{RFC6347}, record sequence numbers are 48-bit values and must remain strictly less than $2^{48}$; the sequence number produced by the witness satisfies this numeric constraint.
 Consulting the specification reveals that Mbed TLS handles this packet correctly, whereas wolfSSL incorrectly rejects a packet whose sequence number is large but still valid.
 This discrepancy exposes a bug in wolfSSL that can lead to interoperability problems.
@@ -350,7 +350,7 @@ This assignment, together with the differing responses, yields a discrepancy wit
 Because discrepancy witnesses are analyzed manually, the script applies a simple deduplication strategy.
 A witness is reported only if no previously reported witness exists with the same packet index and the same pair of observed responses.
 This filtering significantly reduces the number of discrepancies that must be inspected while preserving representative cases.
-In our running example, this strategy reduces the number of reported discrepancies from ten to three.
+In our running example, this strategy reduces the number of reported discrepancies from ten to two.
 
 \subsection{Optional SUT Adaptations}
 %Symbolic execution is substantially slower than native execution, and protocol implementations often include behaviors that further increase analysis complexity.

@@ -92,13 +92,13 @@ The requirement is checked using the following logic:
 		& \scriptstyle \mathtt{if} \, (\, \rfcm{first\_response} \, \land \, \rfcm{p_{in}.code} \, \in \, \rfcm{REQ\_CODES})\\[-5pt]
 		& \scriptstyle \quad \rfcm{preferred\_size} \, := \, \rfcm{BlockSize (p_{out})}\\[-5pt]
 		& \scriptstyle \quad \rfcm{first\_response} \, := \, \mathtt{false} \\[-5pt]
-		& \scriptstyle \mathtt{else \, if} (\neg \, \rfcm{first\_response})\\[-5pt]
+		& \scriptstyle \mathtt{else \, if} (\neg \, \rfcm{first\_response} \, \land \, \rfcm{p_{in}.code} \, \in \, \rfcm{REQ\_CODES})\\[-5pt]
 		& \scriptstyle \quad \mathtt{assert} ((\rfcm{BlockSize (p_{in})} \, > \, \rfcm{preferred\_size}) \, \implies \\[-5pt]
 		& \scriptstyle \qquad\qquad\qquad \rfcm{p_{out}.code} \, \in \,  \rfcm{ERR\_CODES})
 	\end{split}
 \end{equation*}
 %
-The assertion is evaluated only after the server's preferred block size has been established by the first relevant response; in the formulation presented in Paper~\URoman{4}, this condition is implicit and is made explicit here to avoid executing the assertion before the preference is initialized.
+The assertion is evaluated only for subsequent relevant requests, after the server’s preferred block size has been established by the first relevant response. In the formulation presented in Paper~\URoman{4}, these scoping conditions are implicit, whereas they are made explicit here for clarity.
 
 Here, \rfc{REQ\_CODES} represents the set of CoAP request codes.
 The function $\rfcm{BlockSize}$ extracts the block size specified by the Block1 option of a packet, and \rfc{ERR\_CODES} denotes the set of CoAP error response codes.
@@ -128,6 +128,7 @@ During execution, the harness delivers packets to the SUT by reading from the ap
 Since the fuzzer is free to arbitrarily mutate the input buffer, packet boundaries are not guaranteed to remain intact.
 As a result, some mutated inputs may cause packet boundaries to shift or packets to become malformed.
 In such cases, the harness may fail to parse the input correctly or the SUT may immediately reject the input, and these executions do not contribute to requirement checking.
+In our experiments, this behavior did not prevent the fuzzer from generating valid test cases that successfully exercised multi-packet interactions and triggered assertion violations.
 When packet parsing succeeds, however, this design allows the fuzzer to mutate a single input buffer while still exercising a multi-packet protocol interaction.
 As a result, state-dependent requirements can be tested using standard fuzzing infrastructure without modifying the fuzzer itself.
 

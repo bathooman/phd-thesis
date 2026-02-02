@@ -1,26 +1,32 @@
 \selectlanguage{swedish}
 
 \chapter{Sammanfattning På Svenska}\label{chapter:sammanfattning}
-Testning av implementationer av nätverksprotokoll mot deras specifikationer är en utmanande uppgift på grund av protokollens tillståndsberoende beteende, komplexa beroenden mellan paketsekvenser och stora indatarum.
+Internet spelar en central roll i dagens samhälle, och möjliggör att vi kan kommunicera och åtnjuta viktiga tjänster som t.ex.\ surfning, bankärenden och social medier. Internet bygger på ett antal nätverksprotokoll, som är implementerade i enheter anslutna till internet. Sådana implementeringar kan innehålla buggar, bland vilka en del, så kallade sårbarheter, kan utnyttjas för att orsaka skada. Ett exempel är den nu ökända Heartbleed-sårbarheten i en vida spridd implementering av TLS-protokollet, some ledde till att flera miljoner patienters data blottades. För att förebygga och åtgärda sådana sårbarheter har tekniker utvecklats för att säkra implementeringar av nätverksprotokoll, varav den dominerande är testning.
+
+Att testa implementationer av nätverksprotokoll mot sina specifikationer är en utmanande uppgift på grund av protokollens tillståndsberoende beteende, komplexa beroenden mellan paketsekvenser och stora indatarymder.
 Även små avvikelser från en specifikation kan leda till interoperabilitetsproblem eller allvarliga säkerhetssårbarheter, men sådana fel upptäcks ofta inte med traditionella testmetoder som bygger på konkreta testfall eller ofullständiga testorakel.
-
+Symbolisk exekvering är en testningsteknik som addresserar problemet med stora indatarymder. Den analyserar program i vilka (några av) variabler är \emph{symboliska},
+utforskar de kodvägar som är möjliga för specifika värden av de symboliska variablerna, och genererar konkreta för vilka exekveringen följer specifika kodvägar.
 Denna avhandling undersöker hur symbolisk exekvering kan anpassas för att systematiskt och praktiskt testa implementationer av tillståndsberoende nätverksprotokoll. 
-Avhandlingens första bidrag är en kravdriven metod baserad på symbolisk exekvering, där testningen styrs mot exekveringsvägar som är relevanta för att bryta mot protokollkrav uttryckta över sekvenser av paket. 
-Genom att selektivt göra delar av paket symboliska och begränsa utforskningen till kravrelevanta scenarier möjliggörs upptäckt av subtila fel som endast uppstår för specifika gränsvärden eller hörnfall.
 
-Det andra bidraget är en monitorbaserad testteknik som separerar kravkontroll från det system som testas. 
-Protokollkrav specificeras i lätta monitorer som observerar paketutbyten, upprätthåller tillståndsinformation och styr den symboliska exekveringen utan att kräva ingripande modifieringar av implementationens källkod. 
-Detta förbättrar modularitet, möjliggör återanvändning av krav mellan olika implementationer och versioner, samt förenklar utvidgning till nya protokollkrav.
+Avhandlingens första bidrag är en kravdriven metod baserad på symbolisk exekvering, i vilken krav hämtas från protokollets specifikation och uttrycks som  egenskaper hos paketsekvenser, samt realiseras som assertions inlagda i den testade implementeringens källkod. Testningen förbereds genom att spela in och spara en sekvens indatapaket i en interaktion mellan den testade implementeringen och dess motpart. Denna sekvens av indatapaket används sedan som indata under den symboliska exekveringen.
+Den symboliska exekveringen styrs mot exekveringsvägar som är relevanta för att bryta mot dessa krav. Genom att selektivt göra delar av indatapaket symboliska och begränsa exekveringen till kravrelevanta scenarier möjliggörs upptäckt av subtila fel som endast uppstår för specifika variabelvärden eller hörnfall.
 
-Det tredje bidraget utforskar differentiell symbolisk exekvering som en testmetod utan explicit orakel. 
-I stället för att kontrollera efterlevnad mot en formellt specificerad kravuppsättning jämförs observerbart beteende mellan olika implementationer eller versioner under identiska symboliska indatasekvenser. 
-Avvikelser i beteende kan därigenom avslöja potentiella fel eller specifikationsbrott även när explicita krav inte har formulerats.
+Det andra bidraget är en monitorbaserad testteknik i vilken implementering och kontroll av krav separeras från det system som testas. Detta görs med hjälp av monitorer: dessa är komponenter testomgivningen som är separerade från den testade implementeringen.
+Protokollkrav specificeras i monitorer; dessa observerar paketutbyten, upprätthåller tillståndsinformation, styr den symboliska exekveringen, och kontrollerar krav vid tillämpliga punkter i exekveringen, utan att kräva genomgripande modifieringar av implementeringens källkod.
+Genom att protokollkraven inte sätts in i den testade implementeringens källkrav (som i det första bidraget) utan i återanvändbara monitorer,
+så förbättras modularitet, möjliggörs återanvändning av krav mellan olika implementationer och versioner, samt förenklas utvidgning till nya protokollkrav.
 
-Slutligen studeras kravbaserad testning av IoT-protokoll genom en empirisk jämförelse mellan täckningsstyrd fuzzing och symbolisk exekvering, med CoAP som fallstudie. 
+Det tredje bidraget utforskar differentiell symbolisk exekvering som en testmetod som inte använder explicit formulerade krav.. 
+I stället för att kontrollera efterlevnad mot en formellt specificerad kravuppsättning jämförs det observerbara beteendet mellan olika implementationer eller versioner av samma protokoll under identiska symboliska indatasekvenser. Differentiell testning är en etablierad teknik inom vanlig (icke-symbolisk) testning. I bidraget visar vi hur denna teknik kan anpassas för symbolisk exekvering av kommunikationsprotokoll. Anpassningen bygger till vissa delar på den monitorbaserade tekniken som utvecklats i det andra bidraget. Avvikelser i beteende kan därigenom avslöja potentiella fel eller specifikationsbrott även när explicita krav inte har formulerats.
+
+I det fjärde bidraget studeras kravbaserad testning av IoT-protokoll genom en fallstudie utförd på IoT-protokollet CoAP.
+Studien är en empirisk jämförelse mellan täckningsstyrd fuzzing och symbolisk exekvering, uförd på CoAP. Den bygger på den kravdrivna testmetoden som utvecklats i avhandlingens första bidrag. Bidraget visar hur denna metod även kan användas för att testa mot protokollkrav genom täckningsstyrd fuzzing.
 Analysen belyser teknikernas kompletterande styrkor och svagheter vid testning av protokollkrav.
 
-De föreslagna teknikerna har utvärderats på verkliga implementationer av de allmänt använda protokollen DTLS, QUIC och CoAP. 
-Studierna har resulterat i upptäckten av ett stort antal tidigare okända specifikationsbrott och buggar, av vilka majoriteten har bekräftats och åtgärdats av utvecklarna. 
+De föreslagna teknikerna har utvärderats på verkliga implementationer av de vitt använda protokollen DTLS, QUIC och CoAP. 
+Some resultat av studierna har ett stort antal tidigare okända buggar och brott mot specifikationskrav upptäckts, av vilka majoriteten har bekräftats och åtgärdats av utvecklarna.
+Vidare har arbetet reulterat i en allmänt tillgänglig infrastruktur med återanvändbara testomgivningar och monitorer för de testade protokollen, som kan användas för att reproducera våra resultat och bygga vidare på dem.
 Resultaten visar att kravdriven, monitorbaserad och differentiell symbolisk exekvering kan avslöja semantiska avvikelser från protokollspecifikationer som är svåra att upptäcka med konventionella testmetoder, och att teknikerna är praktiskt tillämpbara även på produktionsmogen programvara. 
 
 

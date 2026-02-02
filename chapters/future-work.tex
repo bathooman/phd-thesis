@@ -6,7 +6,7 @@ In particular, recent advances in artificial intelligence and machine learning o
 \paragraph{Automated Extraction of Protocol Requirements Using NLP}
 Protocol requirements are currently identified by manually inspecting specification documents such as RFCs.
 Although the specification text can sometimes be ambiguous and even contradictory, advances in natural language processing open the possibility of automating part of this process.
-Future work could explore the use of NLP techniques to identify normative statements, extract candidate requirements, and map them to structured representations suitable for monitor construction.
+Future work could explore the use of NLP techniques to identify normative statements, extract candidate requirements, and map them to structured representations suitable for monitor construction, building on existing work on NLP-assisted requirements extraction from standards and specification documents~\cite{Arsenal@16, RCM@22}.
 
 Automating the process of requirement extraction would lower the barrier to applying requirement-driven testing to new protocols and help ensure more systematic coverage of protocol specifications.
 
@@ -14,13 +14,14 @@ Automating the process of requirement extraction would lower the barrier to appl
 In the current framework, monitors are implemented directly as executable code that encodes state machines, symbolic field declarations, and assertion logic.
 While this approach offers precise control over monitor behavior, it requires writing low-level code and familiarity with implementation details.
 A promising direction for future work is the design of a high-level domain-specific language (DSL) for formulating monitors.
+Related work has already explored more structured ways of expressing properties over sequences of packets, for example through pattern-based specification languages used to guide symbolic execution and trace checking, as in SymbexNet~\cite{SymbexNet}.
 
 Such a DSL would provide a declarative and protocol-aware abstraction for specifying monitor behavior, including state transitions, packet predicates, symbolic field selection, assumptions, and assertions.
 Monitors expressed in the DSL could then be compiled automatically into executable monitors compatible with the existing symbolic execution infrastructure. This would preserve the benefits of external, reusable monitors while significantly reducing manual effort and implementation complexity.
 
 \paragraph{Applicability to Additional Protocol Classes}
 The evaluation in this thesis already spans multiple protocol classes, including transport-layer protocols as well as application-layer protocols such as CoAP.
-An important direction for future work is to further extend this evaluation across a broader and more diverse set of protocol classes, including industrial control protocols, routing and discovery protocols, and emerging application-layer protocols.
+An important direction for future work is to further extend this evaluation across a broader and more diverse set of protocol classes, including industrial automation protocols, routing and discovery protocols, and emerging application-layer protocols.
 
 While CoAP demonstrates that the approach is applicable beyond transport-layer protocols, additional protocol classes may exhibit different forms of statefulness, looser or more ambiguous specifications, and higher variability across implementations.
 Evaluating the proposed techniques in these settings would help uncover their strengths and limitations more precisely, and may motivate strategies tailored to different protocol families.

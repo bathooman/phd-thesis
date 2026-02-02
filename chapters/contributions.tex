@@ -1,12 +1,12 @@
 \chapter{Contributions}\label{chapter:contributions}
 
 \section{Paper \URoman{1}}
-Paper \URoman{1} presents a requirement-driven application of symbolic execution for testing stateful network protocol implementations against their specifications.
+Paper \URoman{1} presents a requirement-driven approach for using symbolic execution to test stateful network protocol implementations against their specifications.
 The paper shows how symbolic execution can be tailored to explore execution paths that are relevant for violating protocol requirements formulated over sequences of packets, rather than single inputs.
 By selectively making protocol fields symbolic and constraining exploration to requirement-relevant execution paths, the approach enables the detection of violations that arise only under specific protocol states and corner case values.
 
 The paper evaluates the proposed methodology on widely used DTLS implementations.
-The results demonstrate its effectiveness in practice, leading to the discovery of \emph{36} previously unknown bugs in mature and extensively tested implementations.
+The results demonstrate its effectiveness in practice, leading to the discovery of 36 previously unknown bugs in mature and extensively tested implementations.
 This confirms that requirement-driven symbolic execution can uncover subtle specification violations that are difficult to detect using existing testing techniques.
 
 In addition, the paper provides publicly available replication material for all experiments, supporting reproducibility and facilitating further research on symbolic execution-based testing of network protocols.
@@ -18,20 +18,20 @@ By keeping monitors external to the system under test, the technique avoids intr
 
 The paper evaluates the proposed technique on multiple real-world protocol implementations and compares it against a state-of-the-art requirement-driven symbolic execution approach.
 The comparison shows that the monitor-based technique exposes requirement violations considerably faster and with significantly less implementation effort.
-In addition, the evaluation demonstrates that the technique is effective in practice, uncovering \emph{22} previously unknown bugs in DTLS and QUIC implementations.
+In addition, the evaluation demonstrates that the technique is effective in practice, uncovering 22 previously unknown bugs in DTLS and QUIC implementations.
 
 Finally, the paper provides a publicly available testing infrastructure, including reusable test harnesses and sets of monitors for DTLS and QUIC.
 This infrastructure supports replication of the experimental results and facilitates extending the approach to additional protocols and requirements.
 
 \section{Paper \URoman{3}}
 Paper \URoman{3} introduces a differential symbolic execution technique for testing stateful network protocol implementations without relying on a fully specified oracle.
-The key contribution is to compare observable behaviors across protocol implementations under the same symbolic inputs, enabling the detection of nonconformance issues that are difficult to capture using explicit specification-based checks.
+The key idea is to compare observable behaviors across protocol implementations under the same symbolic inputs, enabling the detection of nonconformance issues that are difficult to capture using explicit specification-based checks.
 
 The paper evaluates the proposed technique on several widely used DTLS server implementations.
-The evaluation reveals multiple discrepancies in the handling of protocol edge cases, leading to the discovery of nine distinct bugs, \emph{five} of which were previously unknown.
+The evaluation reveals multiple discrepancies in the handling of protocol edge cases, leading to the discovery of nine distinct bugs, five of which were previously unknown.
 These results demonstrate that differential symbolic execution can effectively expose subtle behavioral differences that may indicate specification violations.
 
-In addition, the paper compares the proposed approach against a state-of-the-art specification-based symbolic execution technique.
+In addition, the paper compares the proposed approach with the technique presented in Paper~\URoman{2}.
 The results show that differential symbolic execution is able to detect all bugs found by the specification-based approach, while also uncovering additional issues that are missed when testing relies on an explicit oracle.
 
 Finally, the paper provides a publicly available infrastructure to support replication of the experiments and to facilitate extending the approach to other network protocols.
@@ -41,7 +41,7 @@ Paper \URoman{4} investigates the application of fuzzing and symbolic execution 
 The paper provides a systematic comparison of fuzzing and symbolic execution with respect to their effectiveness in exposing requirement violations, as well as the time required to do so.
 The results highlight complementary strengths and limitations of the two techniques when applied to protocol conformance testing.
 
-As a result of this evaluation, the paper improves the quality of two CoAP implementations by exposing \emph{nine} previously unknown bugs.
+As a result of this evaluation, the paper improves the quality of two CoAP implementations by exposing nine previously unknown bugs.
 These findings demonstrate that both fuzzing and symbolic execution can be effective techniques for improving the reliability and correctness of IoT protocol implementations when appropriately adapted.
 
 Finally, the paper provides practical guidance on how fuzzing and symbolic execution can be applied to IoT protocol testing. 
@@ -52,7 +52,7 @@ All papers included in this thesis are joint efforts with co-authors.
 My contributions were consistent across Papers \URoman{1}--\URoman{4}, and are summarized below.
 
 I am the primary author of all four papers.
-The overall research direction and methodologies were developed jointly with the co-authors.
+The overall research directions and methodologies were developed jointly with the co-authors.
 I designed and implemented the proposed approaches. 
 Experimental evaluations were conducted collaboratively with the co-authors.
 I analyzed the results, prepared and submitted the corresponding bug reports, and communicated the identified bugs to the developers.
