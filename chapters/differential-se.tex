@@ -181,7 +181,7 @@ During validation, the corresponding packet is modified to contain the witness v
 If confirmed, the non-conformance is reported to the developers.
 
 We conclude this section by instantiating the above procedure for the running example involving the \rfc{sequence\_number} field.
-Symbolic execution produces 35 Path-Output pairs for Mbed TLS and 28 Path-Output pairs for wolfSSL.
+For Mbed TLS, 35 Path-Output pairs are generated, while for wolfSSL, 28 Path-Output pairs are generated.
 %Although these numbers may appear large, all steps up to discrepancy interpretation can be automated.
 Instantiating Formula (\ref{eq:discrepancy}) for these Path-Output pairs yields two satisfying assignments, each forming a discrepancy witness.
 Each witness contains a concrete value for \rfc{sequence\_number}, the index of the packet containing it, and the corresponding responses produced by the two SUTs.
