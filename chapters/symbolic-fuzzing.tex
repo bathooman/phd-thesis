@@ -32,7 +32,7 @@ In either case, the harness provides a uniform mechanism for delivering inputs, 
 
 A key design goal of the harness is to enable both fuzzing and SE with minimal adaptation.
 The same harness structure is used in both settings, with differences limited to how input messages are generated and how responses are analyzed.
-For fuzzing, the harness supplies mutated variants of the captured packets, while for SE it designates selected fields as symbolic and relies on the symbolic executor to explore feasible variations.
+For fuzzing, the harness supplies mutated variants of the captured packets, while for SE it designates selected fields as symbolic and relies on the symbolic executor to explore feasible execution paths.
 By sharing a common harness, both techniques are applied to identical interaction patterns and protocol requirements, enabling a meaningful comparison of their effectiveness in exposing requirement violations.
 
 \subsection{Encoding Protocol Requirements as Assertions}
@@ -129,7 +129,7 @@ Since the fuzzer is free to arbitrarily mutate the input buffer, packet boundari
 As a result, some mutated inputs may cause packet boundaries to shift or packets to become malformed.
 In such cases, the harness may fail to parse the input correctly or the SUT may immediately reject the input, and these executions do not contribute to requirement checking.
 In our experiments, this behavior did not prevent the fuzzer from generating valid test cases that successfully exercised multi-packet interactions and triggered assertion violations.
-When packet parsing succeeds, however, this design allows the fuzzer to mutate a single input buffer while still exercising a multi-packet protocol interaction.
+When packet parsing succeeds, this design allows the fuzzer to mutate a single input buffer while still exercising a multi-packet protocol interaction.
 As a result, state-dependent requirements can be tested using standard fuzzing infrastructure without modifying the fuzzer itself.
 
 Taking into account the inherent randomness of fuzzing, campaigns are repeated multiple times to increase confidence in their ability to expose violations.
