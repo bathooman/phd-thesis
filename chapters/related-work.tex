@@ -1,8 +1,8 @@
 \chapter{Related Work}\label{chapter:related}
-This chapter reviews related work on techniques for testing protocol implementations, focusing on methods that analyze or test executable protocol code.
+This chapter reviews related work on techniques for testing protocol implementations, focusing on methods that test network protocol implementations.
 
 \section{Specification-Based Protocol Testing}
-Ensuring that protocol implementations conform to their specifications has long been an important goal, motivated by the fact that even subtle deviations can lead to interoperability issues or security vulnerabilities.
+Ensuring that network protocol implementations conform to their specifications has long been an important goal, motivated by the fact that even subtle deviations can lead to interoperability issues or security vulnerabilities.
 Traditional approaches for testing conformance are typically specification-driven and rely on abstract models or explicitly encoded properties derived from specification documents such as RFCs.
 
 Model-based Testing (MBT) is a well-established approach in this space, where an abstract behavioral model of the protocol is either manually constructed or inferred through learning techniques~\cite{MBT-reactive@2005,Utting:mbt@2006,Tappler@ICST-2017}.
@@ -34,7 +34,7 @@ A key challenge for fuzzing protocol implementations is statefulness.
 Many protocols require specific sequences of messages to reach deep states in the implementation, and naive fuzzing often fails to explore such interactions.
 To address this challenge, several extensions to greybox fuzzing have been proposed, including AFLNET~\cite{AFLNET@ICST-20}, StateAFL~\cite{StateAFL@EmpirSoftEng-22}, SGFuzz~\cite{SGFuzz@USENIX-22}, SnapFuzz~\cite{SnapFuzz@ISSTA-22} and LibAFLstar~\cite{LibAFLStar@2025}.
 These approaches incorporate protocol state awareness, for instance by tracking message sequences or using lightweight protocol models, in order to improve coverage in stateful systems.
-Empirical evaluations show that such techniques significantly outperform traditional greybox fuzzers on network servers, enabling deeper exploration of protocol logic and leading to the discovery of previously unknown bugs across a range of stateful protocols.
+Empirical evaluations show that such techniques significantly outperform traditional greybox fuzzers on network protocol implementations, enabling deeper exploration of protocol logic and leading to the discovery of previously unknown bugs across a range of stateful protocols.
 Nevertheless, their effectiveness is primarily measured in terms of coverage and crash discovery, and they do not explicitly target violations of semantic protocol requirements derived from specifications.
 
 Despite these advances, fuzzing-based techniques generally offer no guarantees about the absence of protocol-level violations beyond the detection of runtime errors such as crashes, assertion failures, or hangs.
